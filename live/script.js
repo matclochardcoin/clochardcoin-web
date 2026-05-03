@@ -36,9 +36,9 @@ const logSchedule = [
 
 let config = fallbackConfig;
 let audioEnabled = false;
-let logCheckInterval = null;
+let logInterval = null;
 
-const elements = {
+const el = {
   dailyObjective: document.getElementById("dailyObjective"),
   instagramFollowers: document.getElementById("instagramFollowers"),
   telegramUsers: document.getElementById("telegramUsers"),
@@ -62,19 +62,17 @@ const elements = {
 
 async function loadConfig() {
   try {
-    const response = await fetch(`./live-config.json?t=${Date.now()}`, {
+    const response = await fetch(`./live-config.json?nocache=${Date.now()}`, {
       cache: "no-store"
     });
 
-    if (!response.ok) {
-      throw new Error("Config non disponibile");
-    }
+    if (!response.ok) throw new Error("Config non disponibile");
 
-    const externalConfig = await response.json();
-    config = mergeConfig(fallbackConfig, externalConfig);
+    const external = await response.json();
+    config = mergeConfig(fallbackConfig, external);
   } catch (error) {
+    console.warn("Uso fallback:", error);
     config = fallbackConfig;
-    console.warn("Uso configurazione fallback:", error);
   }
 
   applyConfig();
@@ -95,246 +93,182 @@ function mergeConfig(base, external) {
     },
     selectedCommands: Array.isArray(external.selectedCommands)
       ? external.selectedCommands
-      : base.selectedCommands
+      : []
   };
 }
 
 function applyConfig() {
-  const missionText = cleanText(config.dailyObjective);
+  el.dailyObjective.textContent =
+    clean(config.dailyObjective) || "In attesa dell'input serale da Termux";
 
-  elements.dailyObjective.textContent =
-    missionText || "In attesa dell'input serale da Termux";
+  el.instagramFollowers.textContent = config.instagramFollowers;
+  el.telegramUsers.textContent = config.telegramUsers;
+  el.tiktokFollowers.textContent = config.tiktokFollowers;
+  el.youtubeStatus.textContent = config.youtubeStatus;
+  el.solanaWallet.textContent = config.solanaWallet;
+  el.minimumDonation.textContent = config.minimumDonation;
 
-  elements.instagramFollowers.textContent = config.instagramFollowers;
-  elements.telegramUsers.textContent = config.telegramUsers;
-  elements.tiktokFollowers.textContent = config.tiktokFollowers;
-  elements.youtubeStatus.textContent = config.youtubeStatus;
-  elements.solanaWallet.textContent = config.solanaWallet;
-  elements.minimumDonation.textContent = config.minimumDonation;
+  el.instagramLink.href = config.socialLinks.instagram || "#";
+  el.telegramLink.href = config.socialLinks.telegram || "#";
+  el.tiktokLink.href = config.socialLinks.tiktok || "#";
+  el.terminalLink.href = config.socialLinks.terminal || "https://terminal.clochardcoin.it";
 
-  elements.instagramLink.href = config.socialLinks.instagram || "#";
-  elements.telegramLink.href = config.socialLinks.telegram || "#";
-  elements.tiktokLink.href = config.socialLinks.tiktok || "#";
-  elements.terminalLink.href =
-    config.socialLinks.terminal || "https://terminal.clochardcoin.it";
-
-  elements.donateBtn.textContent = `Dona ${config.minimumDonation}`;
+  el.donateBtn.textContent = `Dona ${config.minimumDonation}`;
 }
 
 function startTerminal() {
-  elements.terminal.innerHTML = "";
+  el.terminal.innerHTML = "";
 
-  if (logCheckInterval) {
-    clearInterval(logCheckInterval);
-  }
+  if (logInterval) clearInterval(logInterval);
 
-  const hasMission = cleanText(config.dailyObjective).length > 0;
-  const hasAnyLog = Object.values(config.logs || {}).some((log) => {
-    return cleanText(log.text).length > 0;
-  });
+  const hasMission = clean(config.dailyObjective).length > 0;
+  const hasLogs = Object.values(config.logs || {}).some(log => clean(log.text).length > 0);
 
-  if (!hasMission && !hasAnyLog) {
-    typeLine({
-      label: getCurrentTimeLabel(),
-      category: "STANDBY",
-      text: "In attesa dell'input serale da Termux."
-    });
-
+  if (!hasMission && !hasLogs) {
+    typeLine(nowLabel(), "STANDBY", "In attesa dell'input serale da Termux.");
     return;
   }
 
-  typeLine({
-    label: getCurrentTimeLabel(),
-    category: "STANDBY",
-    text: "Mat è online. I log appariranno solo agli orari programmati: 06, 09, 12, 15, 18, 20."
-  });
-
-  const nextLog = getNextLog();
+  typeLine(
+    nowLabel(),
+    "STANDBY",
+    "Mat è online. I log appariranno solo agli orari programmati: 06, 09, 12, 15, 18, 20."
+  );
 
   setTimeout(() => {
-    if (nextLog) {
-      typeLine({
-        label: getCurrentTimeLabel(),
-        category: "WAIT",
-        text: `Prossimo log programmato: ${nextLog.label}.`
-      });
+    const next = getNextLog();
+
+    if (next) {
+      typeLine(nowLabel(), "WAIT", `Prossimo log programmato: ${next.label}.`);
     } else {
-      typeLine({
-        label: getCurrentTimeLabel(),
-        category: "WAIT",
-        text: "I log operativi di oggi sono terminati. Prossimo ciclo: domani alle 06:00."
-      });
+      typeLine(nowLabel(), "WAIT", "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00.");
     }
   }, 1500);
 
   checkScheduledLog();
 
-  logCheckInterval = setInterval(() => {
+  logInterval = setInterval(() => {
     checkScheduledLog();
-  }, 20 * 1000);
+  }, 20000);
 }
 
 function checkScheduledLog() {
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
 
-  const scheduledItem = logSchedule.find((item) => {
-    return item.hour === currentHour;
-  });
+  const item = logSchedule.find(log => log.hour === hour);
 
-  if (!scheduledItem) {
-    return;
-  }
+  if (!item) return;
 
-  const isLaunchWindow = currentMinute >= 0 && currentMinute <= 4;
+  const insideWindow = minute >= 0 && minute <= 4;
 
-  if (!isLaunchWindow) {
-    return;
-  }
+  if (!insideWindow) return;
 
-  const storageKey = getStorageKey(scheduledItem.key);
+  const storageKey = getStorageKey(item.key);
 
-  if (localStorage.getItem(storageKey) === "printed") {
-    return;
-  }
+  if (localStorage.getItem(storageKey) === "printed") return;
 
-  const log = config.logs[scheduledItem.key];
+  const log = config.logs[item.key];
 
-  if (!log || cleanText(log.text).length === 0) {
-    return;
-  }
+  if (!log || !clean(log.text)) return;
 
   localStorage.setItem(storageKey, "printed");
 
-  typeLine({
-    label: scheduledItem.label,
-    category: log.category || "MAT",
-    text: log.text
-  });
+  typeLine(item.label, log.category || "MAT", log.text);
 
-  if (scheduledItem.key === "09") {
-    setTimeout(() => {
-      printSelectedCommand();
-    }, 1700);
+  if (item.key === "09") {
+    setTimeout(printSelectedCommand, 1700);
   }
 }
 
 function getNextLog() {
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
 
-  return logSchedule.find((item) => {
-    if (currentHour < item.hour) {
-      return true;
-    }
-
-    if (currentHour === item.hour && currentMinute <= 4) {
-      return true;
-    }
-
+  return logSchedule.find(item => {
+    if (hour < item.hour) return true;
+    if (hour === item.hour && minute <= 4) return true;
     return false;
   });
 }
 
 function printSelectedCommand() {
-  if (!config.selectedCommands || config.selectedCommands.length === 0) {
-    return;
-  }
+  if (!Array.isArray(config.selectedCommands)) return;
+  if (config.selectedCommands.length === 0) return;
 
-  const command = config.selectedCommands[0];
+  const command = clean(config.selectedCommands[0]);
 
-  if (!cleanText(command)) {
-    return;
-  }
+  if (!command) return;
 
-  typeLine({
-    label: "09:01",
-    category: "COMMAND",
-    text: `Comando selezionato da terminal.clochardcoin.it: “${command}”`
-  });
+  typeLine(
+    "09:01",
+    "COMMAND",
+    `Comando selezionato da terminal.clochardcoin.it: “${command}”`
+  );
 
   setTimeout(() => {
-    typeLine({
-      label: "09:02",
-      category: "MAT",
-      text: "Lo userò come traccia della missione di oggi."
-    });
+    typeLine("09:02", "MAT", "Lo userò come traccia della missione di oggi.");
   }, 1800);
 }
 
-async function typeLine({ label, category, text }) {
-  if (!cleanText(text)) {
-    return;
-  }
+async function typeLine(label, category, text) {
+  if (!clean(text)) return;
 
   const line = document.createElement("p");
   line.className = "terminal-line cursor";
 
-  if (category === "ERROR" || category === "REPORT") {
+  if (category === "REPORT" || category === "ERROR") {
     line.classList.add("alert");
   }
 
-  elements.terminal.appendChild(line);
+  el.terminal.appendChild(line);
 
-  const fullText = `[${label}] [${category}] ${text}`;
+  const full = `[${label}] [${category}] ${text}`;
 
-  for (let i = 0; i <= fullText.length; i++) {
-    line.innerHTML = formatTerminalLine(fullText.slice(0, i));
-    elements.terminal.scrollTop = elements.terminal.scrollHeight;
+  for (let i = 0; i <= full.length; i++) {
+    line.innerHTML = formatLine(full.slice(0, i));
+    el.terminal.scrollTop = el.terminal.scrollHeight;
     await sleep(18 + Math.random() * 26);
   }
 
   line.classList.remove("cursor");
-
-  limitTerminalLines();
+  limitLines();
 }
 
-function formatTerminalLine(text) {
+function formatLine(text) {
   const match = text.match(/^(\[[^\]]+\])\s(\[[^\]]+\])\s?(.*)$/);
 
-  if (!match) {
-    return escapeHtml(text);
-  }
+  if (!match) return escapeHtml(text);
 
-  const time = escapeHtml(match[1]);
-  const category = escapeHtml(match[2]);
-  const rest = escapeHtml(match[3]);
-
-  return `<span class="time">${time}</span> <span class="category">${category}</span> ${rest}`;
+  return `<span class="time">${escapeHtml(match[1])}</span> <span class="category">${escapeHtml(match[2])}</span> ${escapeHtml(match[3])}`;
 }
 
-function limitTerminalLines() {
-  const maxLines = 16;
-
-  while (elements.terminal.children.length > maxLines) {
-    elements.terminal.removeChild(elements.terminal.firstChild);
+function limitLines() {
+  while (el.terminal.children.length > 16) {
+    el.terminal.removeChild(el.terminal.firstChild);
   }
 }
 
-function getCurrentTimeLabel() {
+function getStorageKey(logKey) {
+  const date = clean(config.date) || new Date().toISOString().slice(0, 10);
+  return `mat-log-${date}-${logKey}`;
+}
+
+function nowLabel() {
   return new Date().toLocaleTimeString("it-IT", {
     hour: "2-digit",
     minute: "2-digit"
   });
 }
 
-function getTodayKey() {
-  const today = new Date().toISOString().slice(0, 10);
-  return config.date || today;
-}
-
-function getStorageKey(logKey) {
-  return `mat-log-${getTodayKey()}-${logKey}`;
-}
-
-function cleanText(value) {
+function clean(value) {
   return String(value || "").trim();
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function escapeHtml(value) {
@@ -347,29 +281,28 @@ function escapeHtml(value) {
 }
 
 function showToast(message) {
-  elements.toast.textContent = message;
-  elements.toast.classList.add("show");
+  el.toast.textContent = message;
+  el.toast.classList.add("show");
 
   setTimeout(() => {
-    elements.toast.classList.remove("show");
+    el.toast.classList.remove("show");
   }, 2600);
 }
 
 function setupButtons() {
-  elements.copyWalletBtn.addEventListener("click", async () => {
+  el.copyWalletBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(config.solanaWallet);
       showToast("Wallet copiato.");
-    } catch (error) {
+    } catch {
       showToast("Copia non riuscita. Tieni premuto sul wallet.");
     }
   });
 
-  elements.donateBtn.addEventListener("click", () => {
-    const encodedLabel = encodeURIComponent("Supporta Mat Clochard");
+  el.donateBtn.addEventListener("click", () => {
     const amount = String(config.minimumDonation || "0.01 SOL").replace(" SOL", "");
-
-    const solanaPayUrl = `solana:${config.solanaWallet}?amount=${amount}&label=${encodedLabel}`;
+    const label = encodeURIComponent("Supporta Mat Clochard");
+    const solanaPayUrl = `solana:${config.solanaWallet}?amount=${amount}&label=${label}`;
 
     window.location.href = solanaPayUrl;
 
@@ -378,35 +311,31 @@ function setupButtons() {
     }, 800);
   });
 
-  elements.toggleAudioBtn.addEventListener("click", async () => {
-    if (!elements.ambientAudio) return;
-
+  el.toggleAudioBtn.addEventListener("click", async () => {
     if (!audioEnabled) {
       try {
-        elements.ambientAudio.volume = 0.22;
-        await elements.ambientAudio.play();
-
+        el.ambientAudio.volume = 0.22;
+        await el.ambientAudio.play();
         audioEnabled = true;
-        elements.toggleAudioBtn.textContent = "Disattiva musica ambient";
+        el.toggleAudioBtn.textContent = "Disattiva musica ambient";
         showToast("Musica ambient attivata.");
-      } catch (error) {
+      } catch {
         showToast("Audio non disponibile. Carica assets/ambient.mp3.");
       }
-
       return;
     }
 
-    elements.ambientAudio.pause();
+    el.ambientAudio.pause();
     audioEnabled = false;
-    elements.toggleAudioBtn.textContent = "Attiva musica ambient";
+    el.toggleAudioBtn.textContent = "Attiva musica ambient";
     showToast("Musica ambient disattivata.");
   });
 }
 
 function setupMatFallback() {
-  elements.matAvatar.addEventListener("error", () => {
-    elements.matAvatar.style.display = "none";
-    elements.matPlaceholder.style.display = "grid";
+  el.matAvatar.addEventListener("error", () => {
+    el.matAvatar.style.display = "none";
+    el.matPlaceholder.style.display = "grid";
   });
 }
 
