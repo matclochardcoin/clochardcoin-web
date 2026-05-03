@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>DAI UN COMANDO A MAT</title>
+
+  <meta name="description" content="Terminale pubblico di Mat Clochard. Scrivi un comando per il primo clochard digitale di ClochardCoin." />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="background-stars"></div>
+  <div class="background-glow"></div>
+
+  <main class="page">
+    <header class="hero">
+      <p class="domain">terminal.clochardcoin.it</p>
+
+      <h1>DAI UN COMANDO A MAT</h1>
+
+      <p class="subtitle">
+        Il tuo comando può entrare nel percorso del primo clochard digitale.
+      </p>
+
+      <p class="intro">
+        Mat Clochard legge i segnali della community e li trasforma in contenuti,
+        missioni e log pubblici nella live.
+      </p>
+    </header>
+
+    <section class="terminal-card">
+      <div class="terminal-top">
+        <div class="dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <p>/mat_clochard/public_command</p>
+      </div>
+
+      <form id="commandForm" class="command-form">
+        <label for="nickname">
+          Nickname opzionale
+        </label>
+
+        <input
+          id="nickname"
+          name="nickname"
+          type="text"
+          maxlength="24"
+          placeholder="es. utente_anonimo"
+        />
+
+        <label for="command">
+          Comando per Mat
+        </label>
+
+        <textarea
+          id="command"
+          name="command"
+          maxlength="240"
+          placeholder="Scrivi un comando per Mat. Esempio: Mat, oggi cerca 10 nuovi follower su Instagram."
+          required
+        ></textarea>
+
+        <div class="counter">
+          <span id="charCount">0</span>/240 caratteri
+        </div>
+
+        <div class="rules-box">
+          <h2>Regole rapide</h2>
+
+          <ul>
+            <li>Non inserire dati personali tuoi o di altre persone.</li>
+            <li>Non scrivere contenuti offensivi, illegali, discriminatori o pericolosi.</li>
+            <li>I comandi possono essere moderati, modificati o esclusi.</li>
+            <li>I migliori comandi possono apparire nella live e nei contenuti ClochardCoin.</li>
+          </ul>
+        </div>
+
+        <label class="checkbox-row">
+          <input id="rulesAccepted" type="checkbox" required />
+          <span>
+            Accetto le regole della community e confermo di non inserire dati personali,
+            contenuti offensivi, illegali o pericolosi.
+          </span>
+        </label>
+
+        <button type="submit" id="submitBtn">
+          Invia comando
+        </button>
+      </form>
+
+      <div id="successBox" class="success-box hidden">
+        <strong>Comando ricevuto.</strong>
+        <p>
+          Se verrà selezionato, potrà apparire nella live di Mat o nel report delle 20:00.
+        </p>
+      </div>
+    </section>
+
+    <section class="info-grid">
+      <div class="info-card">
+        <span>01</span>
+        <strong>Scrivi</strong>
+        <p>Invia un comando semplice, chiaro e utile per la missione di Mat.</p>
+      </div>
+
+      <div class="info-card">
+        <span>02</span>
+        <strong>Selezione</strong>
+        <p>I comandi vengono scelti e moderati prima di entrare nella live.</p>
+      </div>
+
+      <div class="info-card">
+        <span>03</span>
+        <strong>Live</strong>
+        <p>Mat può trasformare il comando in log, contenuto o missione giornaliera.</p>
+      </div>
+    </section>
+
+    <section class="last-commands">
+      <h2>Comandi inviati da questo dispositivo</h2>
+
+      <div id="commandsList" class="commands-list"></div>
+
+      <button id="clearLocalBtn" type="button">
+        Cancella lista locale
+      </button>
+
+      <p class="local-note">
+        In questa prima versione i comandi sono salvati localmente su questo dispositivo.
+        Nel prossimo step collegheremo il terminale a una raccolta reale moderabile.
+      </p>
+    </section>
+
+    <section class="actions">
+      <a href="../live/" class="primary-link">
+        Torna alla live
+      </a>
+
+      <a href="https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr" target="_blank" rel="noopener">
+        Instagram
+      </a>
+
+      <a href="https://t.me/+2WX7IXU1CzBlNzc0" target="_blank" rel="noopener">
+        Telegram
+      </a>
+
+      <a href="#" target="_blank" rel="noopener">
+        TikTok
+      </a>
+    </section>
+
+    <footer class="footer">
+      <p>
+        ClochardCoin vuole costruire un’esperienza trasparente.
+        I comandi inviati dagli utenti sono segnali narrativi e di community.
+      </p>
+
+      <p>
+        Donazioni, interazioni e comandi supportano il progetto ClochardCoin,
+        la produzione dei contenuti e l’evoluzione della live.
+      </p>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./script.js?v=1"></script>
+</body>
+</html>
