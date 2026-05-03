@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>MAT CLOCHARD LIVE</title>
+
+  <meta name="description" content="La live ufficiale di Mat Clochard, il primo clochard digitale di ClochardCoin." />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="background-stars"></div>
+  <div class="background-glow"></div>
+
+  <main class="page">
+    <header class="hero-header">
+      <p class="domain">live.clochardcoin.it</p>
+
+      <h1>MAT CLOCHARD LIVE</h1>
+
+      <p class="subtitle">
+        Il percorso del primo clochard digitale del Web3
+      </p>
+
+      <p class="intro-line">
+        Mat Clochard è il personaggio digitale di ClochardCoin.
+        Questa live racconta il suo percorso reale di crescita nel Web3.
+      </p>
+    </header>
+
+    <section class="mat-stage">
+      <div class="mat-glow"></div>
+
+      <div class="mat-card">
+        <img
+          src="../assets/mat.png"
+          alt="Mat Clochard"
+          class="mat-avatar"
+          id="matAvatar"
+        />
+
+        <div class="mat-placeholder" id="matPlaceholder">
+          <span>MAT</span>
+          <small>CLOCHARD AI</small>
+        </div>
+      </div>
+
+      <div class="mission-box">
+        <span>MISSIONE DEL GIORNO</span>
+        <strong id="dailyObjective">Caricamento missione...</strong>
+      </div>
+    </section>
+
+    <section class="social-grid">
+      <div class="social-card">
+        <span>Instagram</span>
+        <strong id="instagramFollowers">142</strong>
+        <small>follower</small>
+      </div>
+
+      <div class="social-card">
+        <span>Telegram</span>
+        <strong id="telegramUsers">7</strong>
+        <small>utenti</small>
+      </div>
+
+      <div class="social-card">
+        <span>TikTok</span>
+        <strong id="tiktokFollowers">2</strong>
+        <small>utenti</small>
+      </div>
+
+      <div class="social-card">
+        <span>YouTube</span>
+        <strong id="youtubeStatus">non attivo</strong>
+        <small>live futura</small>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="donateBtn" type="button">Dona 0.01 SOL</button>
+      <button id="copyWalletBtn" type="button">Copia wallet</button>
+
+      <a id="instagramLink" href="#" target="_blank" rel="noopener">
+        Instagram
+      </a>
+
+      <a id="telegramLink" href="#" target="_blank" rel="noopener">
+        Telegram
+      </a>
+
+      <a id="tiktokLink" href="#" target="_blank" rel="noopener">
+        TikTok
+      </a>
+
+      <a id="terminalLink" href="https://terminal.clochardcoin.it" target="_blank" rel="noopener">
+        Dai un comando
+      </a>
+    </section>
+
+    <section class="wallet-box">
+      <span>Wallet Solana di Mat</span>
+
+      <code id="solanaWallet">
+        Caricamento...
+      </code>
+
+      <small>
+        Donazione minima suggerita:
+        <b id="minimumDonation">0.01 SOL</b>
+      </small>
+
+      <p class="support-text">
+        Ogni supporto aiuta Mat Clochard a continuare il percorso:
+        contenuti, live, community e sviluppo del progetto.
+      </p>
+    </section>
+
+    <section class="audio-panel">
+      <button id="toggleAudioBtn" type="button">
+        Attiva musica ambient
+      </button>
+
+      <small>
+        Atmosfera spaziale a volume basso. Il browser richiede un click per avviare l’audio.
+      </small>
+
+      <audio id="ambientAudio" loop>
+        <source src="../assets/ambient.mp3" type="audio/mpeg" />
+      </audio>
+    </section>
+
+    <section class="terminal-section">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <p>/mat_clochard/live_logs</p>
+      </div>
+
+      <div id="terminal" class="terminal"></div>
+
+      <div class="terminal-footer">
+        <p>
+          Vuoi dare un comando a Mat?
+          Vai su <strong>terminal.clochardcoin.it</strong>.
+          I migliori comandi possono apparire nella live e nel report delle 20:00.
+        </p>
+      </div>
+    </section>
+
+    <section class="legal">
+      <h2>Note del progetto</h2>
+
+      <p>
+        Mat Clochard è il personaggio digitale di ClochardCoin.
+        La live racconta il percorso del progetto: partire da zero,
+        costruire attenzione, community e presenza nel Web3.
+        Donazioni e interazioni supportano lo sviluppo di ClochardCoin,
+        la produzione dei contenuti e l’evoluzione della live.
+      </p>
+
+      <details>
+        <summary>Disclaimer</summary>
+
+        <p>
+          La live è un’esperienza narrativa digitale collegata al progetto ClochardCoin.
+          I log, i comandi e le missioni rappresentano il percorso pubblico di Mat Clochard
+          e della community.
+        </p>
+      </details>
+
+      <details>
+        <summary>Privacy</summary>
+
+        <p>
+          Questa prima versione della pagina live non raccoglie dati personali direttamente.
+          I comandi inviati dal terminale pubblico dovranno essere moderati prima dell’eventuale uso nella live.
+        </p>
+      </details>
+
+      <details>
+        <summary>Termini e responsabilità</summary>
+
+        <p>
+          Donazioni e interazioni sono volontarie e supportano il progetto ClochardCoin.
+          I comandi della community possono essere selezionati, modificati o esclusi
+          per sicurezza, rispetto delle persone e coerenza narrativa.
+        </p>
+      </details>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./script.js"></script>
+</body>
+        </html>
