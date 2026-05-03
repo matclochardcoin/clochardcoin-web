@@ -1,6 +1,6 @@
 const fallbackConfig = {
-  date: "2026-05-04",
-  dailyObjective: "Trovare 10 storie vere dal mondo clochard in Italia",
+  date: "",
+  dailyObjective: "",
   instagramFollowers: 142,
   telegramUsers: 7,
   tiktokFollowers: 2,
@@ -14,34 +14,31 @@ const fallbackConfig = {
     terminal: "https://terminal.clochardcoin.it",
     live: "https://live.clochardcoin.it"
   },
-  selectedCommands: [
-    "Mat, racconta cosa significa essere invisibile online.",
-    "Mat, cerca un segnale umano nella giornata."
-  ],
+  selectedCommands: [],
   logs: {
     "06": {
       category: "BOOT",
-      text: "Mat si accende. Missione caricata: trovare 10 storie vere dal mondo clochard in Italia."
+      text: ""
     },
     "09": {
       category: "USER_SIGNAL",
-      text: "Mat legge il primo comando selezionato dalla community e lo trasforma in direzione operativa."
+      text: ""
     },
     "12": {
       category: "SCAN",
-      text: "Mat aggiorna lo stato della missione e analizza i primi segnali raccolti."
+      text: ""
     },
     "15": {
       category: "RESULT",
-      text: "Mat elabora i dati raccolti e prepara l’ultima fase operativa della giornata."
+      text: ""
     },
     "18": {
       category: "MAT",
-      text: "Ultimo log operativo. Mat chiude il lavoro di ricerca e prepara il report finale."
+      text: ""
     },
     "20": {
       category: "REPORT",
-      text: "Riassunto della giornata: cosa Mat ha cercato, cosa ha trovato, cosa non ha trovato e quale sarà il prossimo passo."
+      text: ""
     }
   }
 };
@@ -114,12 +111,17 @@ function mergeConfig(base, external) {
       ...base.logs,
       ...(external.logs || {})
     },
-    selectedCommands: external.selectedCommands || base.selectedCommands
+    selectedCommands: Array.isArray(external.selectedCommands)
+      ? external.selectedCommands
+      : base.selectedCommands
   };
 }
 
 function applyConfig() {
-  elements.dailyObjective.textContent = config.dailyObjective;
+  const missionText = cleanText(config.dailyObjective);
+
+  elements.dailyObjective.textContent = missionText || "In attesa dell'input serale da Termux";
+
   elements.instagramFollowers.textContent = config.instagramFollowers;
   elements.telegramUsers.textContent = config.telegramUsers;
   elements.tiktokFollowers.textContent = config.tiktokFollowers;
@@ -139,19 +141,34 @@ function startTerminal() {
   elements.terminal.innerHTML = "";
   printedLogs.clear();
 
+  const hasMission = cleanText(config.dailyObjective).length > 0;
+  const hasAnyLog = Object.values(config.logs || {}).some((log) => cleanText(log.text).length > 0);
+
+  if (!hasMission && !hasAnyLog) {
+    typeLine({
+      label: getCurrentTimeLabel(),
+      category: "STANDBY",
+      text: "In attesa dell'input serale da Termux."
+    });
+
+    return;
+  }
+
   typeLine({
     label: getCurrentTimeLabel(),
     category: "BOOT",
     text: "Connessione al terminale di Mat Clochard..."
   });
 
-  setTimeout(() => {
-    typeLine({
-      label: getCurrentTimeLabel(),
-      category: "MISSION",
-      text: `Missione attiva: ${config.dailyObjective}`
-    });
-  }, 1300);
+  if (hasMission) {
+    setTimeout(() => {
+      typeLine({
+        label: getCurrentTimeLabel(),
+        category: "MISSION",
+        text: `Missione attiva: ${config.dailyObjective}`
+      });
+    }, 1300);
+  }
 
   setTimeout(() => {
     printUnlockedLogs();
@@ -170,14 +187,16 @@ function printUnlockedLogs() {
     if (currentHour >= item.hour && !printedLogs.has(item.key)) {
       const log = config.logs[item.key];
 
-      if (!log) return;
+      if (!log || cleanText(log.text).length === 0) {
+        return;
+      }
 
       printedLogs.add(item.key);
 
       typeLine({
         label: item.label,
         category: log.category || "MAT",
-        text: log.text || ""
+        text: log.text
       });
 
       if (item.key === "09") {
@@ -192,7 +211,7 @@ function printUnlockedLogs() {
 function printSelectedCommandIntro() {
   const currentHour = new Date().getHours();
 
-  if (currentHour < 9) {
+  if (currentHour < 9 && config.selectedCommands.length > 0) {
     typeLine({
       label: getCurrentTimeLabel(),
       category: "USER_SIGNAL",
@@ -207,6 +226,10 @@ function printSelectedCommand() {
   }
 
   const command = config.selectedCommands[0];
+
+  if (!cleanText(command)) {
+    return;
+  }
 
   typeLine({
     label: "09:01",
@@ -224,6 +247,10 @@ function printSelectedCommand() {
 }
 
 async function typeLine({ label, category, text }) {
+  if (!cleanText(text)) {
+    return;
+  }
+
   const line = document.createElement("p");
   line.className = "terminal-line cursor";
 
@@ -274,6 +301,10 @@ function getCurrentTimeLabel() {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function cleanText(value) {
+  return String(value || "").trim();
 }
 
 function sleep(ms) {
