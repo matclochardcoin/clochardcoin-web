@@ -35,8 +35,8 @@ const logSchedule = [
 ];
 
 let config = fallbackConfig;
-let printedLogs = new Set();
 let audioEnabled = false;
+let logCheckInterval = null;
 
 const elements = {
   dailyObjective: document.getElementById("dailyObjective"),
@@ -62,7 +62,7 @@ const elements = {
 
 async function loadConfig() {
   try {
-    const response = await fetch("./live-config.json", {
+    const response = await fetch(`./live-config.json?t=${Date.now()}`, {
       cache: "no-store"
     });
 
@@ -123,15 +123,15 @@ function applyConfig() {
 
 function startTerminal() {
   elements.terminal.innerHTML = "";
-  printedLogs.clear();
 
-  loadPrintedLogsFromStorage();
-  markPastLogsAsSeenWithoutPrinting();
+  if (logCheckInterval) {
+    clearInterval(logCheckInterval);
+  }
 
   const hasMission = cleanText(config.dailyObjective).length > 0;
-  const hasAnyLog = Object.values(config.logs || {}).some(
-    (log) => cleanText(log.text).length > 0
-  );
+  const hasAnyLog = Object.values(config.logs || {}).some((log) => {
+    return cleanText(log.text).length > 0;
+  });
 
   if (!hasMission && !hasAnyLog) {
     typeLine({
@@ -151,27 +151,25 @@ function startTerminal() {
 
   const nextLog = getNextLog();
 
-  if (nextLog) {
-    setTimeout(() => {
+  setTimeout(() => {
+    if (nextLog) {
       typeLine({
         label: getCurrentTimeLabel(),
         category: "WAIT",
         text: `Prossimo log programmato: ${nextLog.label}.`
       });
-    }, 1600);
-  } else {
-    setTimeout(() => {
+    } else {
       typeLine({
         label: getCurrentTimeLabel(),
         category: "WAIT",
-        text: "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00."
+        text: "I log operativi di oggi sono terminati. Prossimo ciclo: domani alle 06:00."
       });
-    }, 1600);
-  }
+    }
+  }, 1500);
 
   checkScheduledLog();
 
-  setInterval(() => {
+  logCheckInterval = setInterval(() => {
     checkScheduledLog();
   }, 20 * 1000);
 }
@@ -181,56 +179,45 @@ function checkScheduledLog() {
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
 
-  logSchedule.forEach((item) => {
-    const isScheduledHour = currentHour === item.hour;
-    const isInsideLaunchWindow = currentMinute >= 0 && currentMinute <= 4;
-
-    if (!isScheduledHour || !isInsideLaunchWindow) {
-      return;
-    }
-
-    if (printedLogs.has(getStorageKey(item.key))) {
-      return;
-    }
-
-    const log = config.logs[item.key];
-
-    if (!log || cleanText(log.text).length === 0) {
-      return;
-    }
-
-    printedLogs.add(getStorageKey(item.key));
-    savePrintedLogsToStorage();
-
-    typeLine({
-      label: item.label,
-      category: log.category || "MAT",
-      text: log.text
-    });
-
-    if (item.key === "09") {
-      setTimeout(() => {
-        printSelectedCommand();
-      }, 1700);
-    }
-  });
-}
-
-function markPastLogsAsSeenWithoutPrinting() {
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-
-  logSchedule.forEach((item) => {
-    const logTimeAlreadyPassed =
-      currentHour > item.hour || (currentHour === item.hour && currentMinute > 4);
-
-    if (logTimeAlreadyPassed) {
-      printedLogs.add(getStorageKey(item.key));
-    }
+  const scheduledItem = logSchedule.find((item) => {
+    return item.hour === currentHour;
   });
 
-  savePrintedLogsToStorage();
+  if (!scheduledItem) {
+    return;
+  }
+
+  const isLaunchWindow = currentMinute >= 0 && currentMinute <= 4;
+
+  if (!isLaunchWindow) {
+    return;
+  }
+
+  const storageKey = getStorageKey(scheduledItem.key);
+
+  if (localStorage.getItem(storageKey) === "printed") {
+    return;
+  }
+
+  const log = config.logs[scheduledItem.key];
+
+  if (!log || cleanText(log.text).length === 0) {
+    return;
+  }
+
+  localStorage.setItem(storageKey, "printed");
+
+  typeLine({
+    label: scheduledItem.label,
+    category: log.category || "MAT",
+    text: log.text
+  });
+
+  if (scheduledItem.key === "09") {
+    setTimeout(() => {
+      printSelectedCommand();
+    }, 1700);
+  }
 }
 
 function getNextLog() {
@@ -296,7 +283,6 @@ async function typeLine({ label, category, text }) {
   for (let i = 0; i <= fullText.length; i++) {
     line.innerHTML = formatTerminalLine(fullText.slice(0, i));
     elements.terminal.scrollTop = elements.terminal.scrollHeight;
-
     await sleep(18 + Math.random() * 26);
   }
 
@@ -341,24 +327,6 @@ function getTodayKey() {
 
 function getStorageKey(logKey) {
   return `mat-log-${getTodayKey()}-${logKey}`;
-}
-
-function loadPrintedLogsFromStorage() {
-  logSchedule.forEach((item) => {
-    const key = getStorageKey(item.key);
-
-    if (localStorage.getItem(key) === "printed") {
-      printedLogs.add(key);
-    }
-  });
-}
-
-function savePrintedLogsToStorage() {
-  printedLogs.forEach((key) => {
-    if (String(key).startsWith("mat-log-")) {
-      localStorage.setItem(key, "printed");
-    }
-  });
 }
 
 function cleanText(value) {
