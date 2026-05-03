@@ -1,6 +1,6 @@
 {
-  "date": "2026-05-04",
-  "dailyObjective": "Trovare 10 storie vere dal mondo clochard in Italia",
+  "date": "",
+  "dailyObjective": "",
   "instagramFollowers": 142,
   "telegramUsers": 7,
   "tiktokFollowers": 2,
@@ -14,34 +14,31 @@
     "terminal": "https://terminal.clochardcoin.it",
     "live": "https://live.clochardcoin.it"
   },
-  "selectedCommands": [
-    "Mat, racconta cosa significa essere invisibile online.",
-    "Mat, cerca un segnale umano nella giornata."
-  ],
+  "selectedCommands": [],
   "logs": {
     "06": {
       "category": "BOOT",
-      "text": "Mat si accende. Missione caricata: trovare 10 storie vere dal mondo clochard in Italia."
+      "text": ""
     },
     "09": {
       "category": "USER_SIGNAL",
-      "text": "Mat legge il primo comando selezionato dalla community e lo trasforma in direzione operativa."
+      "text": ""
     },
     "12": {
       "category": "SCAN",
-      "text": "Mat aggiorna lo stato della missione e analizza i primi segnali raccolti."
+      "text": ""
     },
     "15": {
       "category": "RESULT",
-      "text": "Mat elabora i dati raccolti e prepara l’ultima fase operativa della giornata."
+      "text": ""
     },
     "18": {
       "category": "MAT",
-      "text": "Ultimo log operativo. Mat chiude il lavoro di ricerca e prepara il report finale."
+      "text": ""
     },
     "20": {
       "category": "REPORT",
-      "text": "Riassunto della giornata: cosa Mat ha cercato, cosa ha trovato, cosa non ha trovato e quale sarà il prossimo passo."
+      "text": ""
     }
   }
 }
