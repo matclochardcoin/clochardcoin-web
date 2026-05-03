@@ -16,30 +16,12 @@ const fallbackConfig = {
   },
   selectedCommands: [],
   logs: {
-    "06": {
-      category: "BOOT",
-      text: ""
-    },
-    "09": {
-      category: "USER_SIGNAL",
-      text: ""
-    },
-    "12": {
-      category: "SCAN",
-      text: ""
-    },
-    "15": {
-      category: "RESULT",
-      text: ""
-    },
-    "18": {
-      category: "MAT",
-      text: ""
-    },
-    "20": {
-      category: "REPORT",
-      text: ""
-    }
+    "06": { category: "BOOT", text: "" },
+    "09": { category: "USER_SIGNAL", text: "" },
+    "12": { category: "SCAN", text: "" },
+    "15": { category: "RESULT", text: "" },
+    "18": { category: "MAT", text: "" },
+    "20": { category: "REPORT", text: "" }
   }
 };
 
@@ -120,7 +102,8 @@ function mergeConfig(base, external) {
 function applyConfig() {
   const missionText = cleanText(config.dailyObjective);
 
-  elements.dailyObjective.textContent = missionText || "In attesa dell'input serale da Termux";
+  elements.dailyObjective.textContent =
+    missionText || "In attesa dell'input serale da Termux";
 
   elements.instagramFollowers.textContent = config.instagramFollowers;
   elements.telegramUsers.textContent = config.telegramUsers;
@@ -132,7 +115,8 @@ function applyConfig() {
   elements.instagramLink.href = config.socialLinks.instagram || "#";
   elements.telegramLink.href = config.socialLinks.telegram || "#";
   elements.tiktokLink.href = config.socialLinks.tiktok || "#";
-  elements.terminalLink.href = config.socialLinks.terminal || "https://terminal.clochardcoin.it";
+  elements.terminalLink.href =
+    config.socialLinks.terminal || "https://terminal.clochardcoin.it";
 
   elements.donateBtn.textContent = `Dona ${config.minimumDonation}`;
 }
@@ -141,8 +125,13 @@ function startTerminal() {
   elements.terminal.innerHTML = "";
   printedLogs.clear();
 
+  loadPrintedLogsFromStorage();
+  markPastLogsAsSeenWithoutPrinting();
+
   const hasMission = cleanText(config.dailyObjective).length > 0;
-  const hasAnyLog = Object.values(config.logs || {}).some((log) => cleanText(log.text).length > 0);
+  const hasAnyLog = Object.values(config.logs || {}).some(
+    (log) => cleanText(log.text).length > 0
+  );
 
   if (!hasMission && !hasAnyLog) {
     typeLine({
@@ -156,68 +145,110 @@ function startTerminal() {
 
   typeLine({
     label: getCurrentTimeLabel(),
-    category: "BOOT",
-    text: "Connessione al terminale di Mat Clochard..."
+    category: "STANDBY",
+    text: "Mat è online. I log appariranno solo agli orari programmati: 06, 09, 12, 15, 18, 20."
   });
 
-  if (hasMission) {
+  const nextLog = getNextLog();
+
+  if (nextLog) {
     setTimeout(() => {
       typeLine({
         label: getCurrentTimeLabel(),
-        category: "MISSION",
-        text: `Missione attiva: ${config.dailyObjective}`
+        category: "WAIT",
+        text: `Prossimo log programmato: ${nextLog.label}.`
       });
-    }, 1300);
+    }, 1600);
+  } else {
+    setTimeout(() => {
+      typeLine({
+        label: getCurrentTimeLabel(),
+        category: "WAIT",
+        text: "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00."
+      });
+    }, 1600);
   }
 
-  setTimeout(() => {
-    printUnlockedLogs();
-    printSelectedCommandIntro();
-  }, 2600);
+  checkScheduledLog();
 
   setInterval(() => {
-    printUnlockedLogs();
-  }, 30 * 1000);
+    checkScheduledLog();
+  }, 20 * 1000);
 }
 
-function printUnlockedLogs() {
-  const currentHour = new Date().getHours();
+function checkScheduledLog() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
 
   logSchedule.forEach((item) => {
-    if (currentHour >= item.hour && !printedLogs.has(item.key)) {
-      const log = config.logs[item.key];
+    const isScheduledHour = currentHour === item.hour;
+    const isInsideLaunchWindow = currentMinute >= 0 && currentMinute <= 4;
 
-      if (!log || cleanText(log.text).length === 0) {
-        return;
-      }
+    if (!isScheduledHour || !isInsideLaunchWindow) {
+      return;
+    }
 
-      printedLogs.add(item.key);
+    if (printedLogs.has(getStorageKey(item.key))) {
+      return;
+    }
 
-      typeLine({
-        label: item.label,
-        category: log.category || "MAT",
-        text: log.text
-      });
+    const log = config.logs[item.key];
 
-      if (item.key === "09") {
-        setTimeout(() => {
-          printSelectedCommand();
-        }, 1700);
-      }
+    if (!log || cleanText(log.text).length === 0) {
+      return;
+    }
+
+    printedLogs.add(getStorageKey(item.key));
+    savePrintedLogsToStorage();
+
+    typeLine({
+      label: item.label,
+      category: log.category || "MAT",
+      text: log.text
+    });
+
+    if (item.key === "09") {
+      setTimeout(() => {
+        printSelectedCommand();
+      }, 1700);
     }
   });
 }
 
-function printSelectedCommandIntro() {
-  const currentHour = new Date().getHours();
+function markPastLogsAsSeenWithoutPrinting() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
 
-  if (currentHour < 9 && config.selectedCommands.length > 0) {
-    typeLine({
-      label: getCurrentTimeLabel(),
-      category: "USER_SIGNAL",
-      text: "I comandi della community verranno letti durante la giornata."
-    });
-  }
+  logSchedule.forEach((item) => {
+    const logTimeAlreadyPassed =
+      currentHour > item.hour || (currentHour === item.hour && currentMinute > 4);
+
+    if (logTimeAlreadyPassed) {
+      printedLogs.add(getStorageKey(item.key));
+    }
+  });
+
+  savePrintedLogsToStorage();
+}
+
+function getNextLog() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  return logSchedule.find((item) => {
+    if (currentHour < item.hour) {
+      return true;
+    }
+
+    if (currentHour === item.hour && currentMinute <= 4) {
+      return true;
+    }
+
+    return false;
+  });
 }
 
 function printSelectedCommand() {
@@ -300,6 +331,33 @@ function getCurrentTimeLabel() {
   return new Date().toLocaleTimeString("it-IT", {
     hour: "2-digit",
     minute: "2-digit"
+  });
+}
+
+function getTodayKey() {
+  const today = new Date().toISOString().slice(0, 10);
+  return config.date || today;
+}
+
+function getStorageKey(logKey) {
+  return `mat-log-${getTodayKey()}-${logKey}`;
+}
+
+function loadPrintedLogsFromStorage() {
+  logSchedule.forEach((item) => {
+    const key = getStorageKey(item.key);
+
+    if (localStorage.getItem(key) === "printed") {
+      printedLogs.add(key);
+    }
+  });
+}
+
+function savePrintedLogsToStorage() {
+  printedLogs.forEach((key) => {
+    if (String(key).startsWith("mat-log-")) {
+      localStorage.setItem(key, "printed");
+    }
   });
 }
 
