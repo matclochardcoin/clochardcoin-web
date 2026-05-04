@@ -14,6 +14,11 @@ const moderationList = document.getElementById("moderationList");
 const toast = document.getElementById("toast");
 
 function showToast(message) {
+  if (!toast) {
+    alert(message);
+    return;
+  }
+
   toast.textContent = message;
   toast.classList.add("show");
 
@@ -31,27 +36,15 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function isLoggedIn() {
-  return localStorage.getItem("mat-moderator-auth") === "true";
+function showLogin() {
+  loginBox.classList.remove("hidden");
+  moderationBox.classList.add("hidden");
 }
 
-function setLoggedIn(value) {
-  if (value) {
-    localStorage.setItem("mat-moderator-auth", "true");
-  } else {
-    localStorage.removeItem("mat-moderator-auth");
-  }
-}
-
-function updateView() {
-  if (isLoggedIn()) {
-    loginBox.classList.add("hidden");
-    moderationBox.classList.remove("hidden");
-    loadCommands();
-  } else {
-    loginBox.classList.remove("hidden");
-    moderationBox.classList.add("hidden");
-  }
+function showModerator() {
+  loginBox.classList.add("hidden");
+  moderationBox.classList.remove("hidden");
+  loadCommands();
 }
 
 async function loadCommands() {
@@ -63,30 +56,33 @@ async function loadCommands() {
   `;
 
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=id,nickname,command,status,created_at&status=eq.pending&order=created_at.desc&limit=50`,
-      {
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`
-        }
+    const url =
+      `${SUPABASE_URL}/rest/v1/${TABLE_NAME}` +
+      `?select=id,nickname,command,status,created_at` +
+      `&status=eq.pending` +
+      `&order=created_at.desc` +
+      `&limit=50`;
+
+    const response = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
       }
-    );
+    });
 
     if (!response.ok) {
       throw new Error(await response.text());
     }
 
     const commands = await response.json();
-
     renderCommands(commands);
   } catch (error) {
     console.error(error);
 
     moderationList.innerHTML = `
       <div class="command-item">
-        <strong>Errore</strong>
-        <p>Non riesco a leggere i comandi. Controlla policy Supabase.</p>
+        <strong>Errore lettura Supabase</strong>
+        <p>Controlla le policy SELECT/UPDATE su Supabase.</p>
       </div>
     `;
   }
@@ -115,12 +111,8 @@ function renderCommands(commands) {
       <small>${escapeHtml(item.created_at)} · stato: ${escapeHtml(item.status)}</small>
 
       <div class="actions" style="justify-content:flex-start;margin:12px 0 0;">
-        <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">
-          Approva
-        </button>
-        <button type="button" data-action="blocked" data-id="${escapeHtml(item.id)}">
-          Blocca
-        </button>
+        <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">Approva</button>
+        <button type="button" data-action="blocked" data-id="${escapeHtml(item.id)}">Blocca</button>
       </div>
     `;
 
@@ -149,7 +141,7 @@ async function updateStatus(id, status) {
     }
 
     showToast(status === "approved" ? "Comando approvato." : "Comando bloccato.");
-    await loadCommands();
+    loadCommands();
   } catch (error) {
     console.error(error);
     showToast("Errore aggiornamento comando.");
@@ -157,28 +149,34 @@ async function updateStatus(id, status) {
 }
 
 loginBtn.addEventListener("click", () => {
-  if (adminPassword.value === ADMIN_PASSWORD) {
-    setLoggedIn(true);
-    showToast("Accesso moderatore riuscito.");
-    updateView();
+  const password = adminPassword.value.trim();
+
+  if (password !== ADMIN_PASSWORD) {
+    showToast("Password errata.");
     return;
   }
 
-  showToast("Password errata.");
+  localStorage.setItem("mat-moderator-auth", "true");
+  showToast("Accesso riuscito.");
+  showModerator();
 });
 
 logoutBtn.addEventListener("click", () => {
-  setLoggedIn(false);
-  updateView();
+  localStorage.removeItem("mat-moderator-auth");
+  showLogin();
 });
 
 refreshBtn.addEventListener("click", loadCommands);
 
-moderationList.addEventListener("click", async (event) => {
+moderationList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
 
-  await updateStatus(button.dataset.id, button.dataset.action);
+  updateStatus(button.dataset.id, button.dataset.action);
 });
 
-updateView();
+if (localStorage.getItem("mat-moderator-auth") === "true") {
+  showModerator();
+} else {
+  showLogin();
+}
