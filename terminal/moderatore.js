@@ -1,11 +1,12 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const TABLE_NAME = "mat_commands";
+const ADMIN_PASSWORD = "MAT2026";
 
 const loginBox = document.getElementById("loginBox");
 const moderationBox = document.getElementById("moderationBox");
-const emailInput = document.getElementById("email");
+const adminPassword = document.getElementById("adminPassword");
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const refreshBtn = document.getElementById("refreshBtn");
@@ -15,7 +16,10 @@ const toast = document.getElementById("toast");
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 2600);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2600);
 }
 
 function escapeHtml(value) {
@@ -27,87 +31,81 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-async function checkSession() {
-  const { data } = await client.auth.getSession();
+function isLoggedIn() {
+  return localStorage.getItem("mat-moderator-auth") === "true";
+}
 
-  if (data.session) {
+function setLoggedIn(value) {
+  if (value) {
+    localStorage.setItem("mat-moderator-auth", "true");
+  } else {
+    localStorage.removeItem("mat-moderator-auth");
+  }
+}
+
+function updateView() {
+  if (isLoggedIn()) {
     loginBox.classList.add("hidden");
     moderationBox.classList.remove("hidden");
-    await loadCommands();
+    loadCommands();
   } else {
     loginBox.classList.remove("hidden");
     moderationBox.classList.add("hidden");
   }
 }
 
-async function login() {
-  const email = emailInput.value.trim();
-
-  if (!email) {
-    showToast("Inserisci email.");
-    return;
-  }
-
-  const { error } = await client.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: window.location.href
-    }
-  });
-
-  if (error) {
-    showToast("Errore invio magic link.");
-    console.error(error);
-    return;
-  }
-
-  showToast("Magic link inviato. Controlla email.");
-}
-
-async function logout() {
-  await client.auth.signOut();
-  await checkSession();
-}
-
 async function loadCommands() {
   moderationList.innerHTML = `
     <div class="command-item">
       <strong>Caricamento...</strong>
-      <p>Sto leggendo i comandi in attesa.</p>
+      <p>Sto leggendo i comandi pending.</p>
     </div>
   `;
 
-  const { data, error } = await client
-    .from("mat_commands")
-    .select("id,nickname,command,status,created_at")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=id,nickname,command,status,created_at&status=eq.pending&order=created_at.desc&limit=50`,
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
 
-  if (error) {
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const commands = await response.json();
+
+    renderCommands(commands);
+  } catch (error) {
+    console.error(error);
+
     moderationList.innerHTML = `
       <div class="command-item">
         <strong>Errore</strong>
-        <p>Non riesco a leggere i comandi. Controlla le policy Supabase.</p>
+        <p>Non riesco a leggere i comandi. Controlla policy Supabase.</p>
       </div>
     `;
-    console.error(error);
-    return;
   }
+}
 
-  if (!data.length) {
+function renderCommands(commands) {
+  moderationList.innerHTML = "";
+
+  if (!commands.length) {
     moderationList.innerHTML = `
       <div class="command-item">
         <strong>Nessun comando pending</strong>
-        <p>Quando gli utenti scriveranno nuovi comandi, appariranno qui.</p>
+        <p>Quando gli utenti inviano nuovi comandi, appariranno qui.</p>
       </div>
     `;
     return;
   }
 
-  moderationList.innerHTML = "";
-
-  data.forEach((item) => {
+  commands.forEach((item) => {
     const div = document.createElement("div");
     div.className = "command-item";
 
@@ -131,23 +129,49 @@ async function loadCommands() {
 }
 
 async function updateStatus(id, status) {
-  const { error } = await client
-    .from("mat_commands")
-    .update({ status })
-    .eq("id", id);
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Prefer: "return=minimal"
+        },
+        body: JSON.stringify({ status })
+      }
+    );
 
-  if (error) {
-    showToast("Errore aggiornamento comando.");
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    showToast(status === "approved" ? "Comando approvato." : "Comando bloccato.");
+    await loadCommands();
+  } catch (error) {
     console.error(error);
+    showToast("Errore aggiornamento comando.");
+  }
+}
+
+loginBtn.addEventListener("click", () => {
+  if (adminPassword.value === ADMIN_PASSWORD) {
+    setLoggedIn(true);
+    showToast("Accesso moderatore riuscito.");
+    updateView();
     return;
   }
 
-  showToast(status === "approved" ? "Comando approvato." : "Comando bloccato.");
-  await loadCommands();
-}
+  showToast("Password errata.");
+});
 
-loginBtn.addEventListener("click", login);
-logoutBtn.addEventListener("click", logout);
+logoutBtn.addEventListener("click", () => {
+  setLoggedIn(false);
+  updateView();
+});
+
 refreshBtn.addEventListener("click", loadCommands);
 
 moderationList.addEventListener("click", async (event) => {
@@ -157,4 +181,4 @@ moderationList.addEventListener("click", async (event) => {
   await updateStatus(button.dataset.id, button.dataset.action);
 });
 
-checkSession();
+updateView();
