@@ -28,5 +28,11 @@
     "hour": 20,
     "objective": "PRESENZA",
     "message": "Mat chiude il ciclo e salva i risultati."
+  },
+  {
+    "date": "04/05/2026",
+    "hour": 20,
+    "objective": "PRESENZA",
+    "message": "Mat chiude il ciclo e salva i risultati."
   }
 ]
