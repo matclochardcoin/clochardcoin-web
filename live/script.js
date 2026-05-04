@@ -63,7 +63,8 @@ const el = {
   toggleAudioBtn: document.getElementById("toggleAudioBtn"),
   toast: document.getElementById("toast"),
   matAvatar: document.getElementById("matAvatar"),
-  matPlaceholder: document.getElementById("matPlaceholder")
+  matPlaceholder: document.getElementById("matPlaceholder"),
+  archiveList: document.getElementById("archiveList")
 };
 
 async function loadConfig() {
@@ -137,9 +138,13 @@ function startTerminal() {
   } else {
     typeLine(
       nowLabel(),
-      "STANDBY",
-      "Mat è online. I log appariranno solo agli orari programmati: 06, 09, 12, 15, 18, 20."
+      "BOOT",
+      "Storico della giornata caricato. Mat mostra i log già completati."
     );
+
+    setTimeout(() => {
+      printTodayUnlockedLogs();
+    }, 1200);
 
     setTimeout(() => {
       const next = getNextLog();
@@ -153,9 +158,7 @@ function startTerminal() {
           "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00."
         );
       }
-    }, 1500);
-
-    checkScheduledLog();
+    }, 2800);
 
     logInterval = setInterval(() => {
       checkScheduledLog();
@@ -169,6 +172,33 @@ function startTerminal() {
   communityInterval = setInterval(() => {
     printCommunitySignal();
   }, 3 * 60 * 1000);
+
+  loadArchiveIndex();
+}
+
+function printTodayUnlockedLogs() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  logSchedule.forEach((item, index) => {
+    const logIsUnlocked =
+      currentHour > item.hour ||
+      (currentHour === item.hour && currentMinute >= 0);
+
+    if (!logIsUnlocked) return;
+
+    const log = config.logs[item.key];
+
+    if (!log || !clean(log.text)) return;
+
+    const storageKey = getStorageKey(item.key);
+    localStorage.setItem(storageKey, "printed");
+
+    setTimeout(() => {
+      typeLine(item.label, log.category || "MAT", log.text);
+    }, index * 850);
+  });
 }
 
 function checkScheduledLog() {
@@ -225,7 +255,9 @@ function printSelectedCommand() {
   setTimeout(() => {
     typeLine("09:02", "MAT", "Lo userò come traccia della missione di oggi.");
   }, 1800);
-}async function fetchCommunityCommands() {
+}
+
+async function fetchCommunityCommands() {
   try {
     const query =
       `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}` +
@@ -268,11 +300,7 @@ async function printCommunitySignal() {
 
   const nickname = clean(item.nickname) || "utente_anonimo";
 
-  typeLine(
-    nowLabel(),
-    "USER_SIGNAL",
-    `@${nickname}: ${item.command}`
-  );
+  typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
 
   setTimeout(() => {
     typeLine(
@@ -281,6 +309,98 @@ async function printCommunitySignal() {
       "Segnale approvato. Potrebbe diventare parte del prossimo log."
     );
   }, 1800);
+}
+
+async function loadArchiveIndex() {
+  if (!el.archiveList) return;
+
+  const archiveDates = buildArchiveDates(20);
+  const archiveItems = [];
+
+  for (const date of archiveDates) {
+    try {
+      const response = await fetch(`./archive/${date}.json?nocache=${Date.now()}`, {
+        cache: "no-store"
+      });
+
+      if (!response.ok) continue;
+
+      const data = await response.json();
+
+      if (!data || !data.date) continue;
+
+      archiveItems.push(data);
+    } catch {
+      continue;
+    }
+  }
+
+  renderArchive(archiveItems);
+}
+
+function buildArchiveDates(daysBack) {
+  const dates = [];
+  const today = new Date();
+
+  for (let i = 1; i <= daysBack; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    dates.push(date.toISOString().slice(0, 10));
+  }
+
+  return dates;
+}
+
+function renderArchive(items) {
+  if (!el.archiveList) return;
+
+  if (!items.length) {
+    el.archiveList.innerHTML = `
+      <div class="archive-empty">
+        Archivio in attesa dei primi salvataggi da Termux.
+      </div>
+    `;
+    return;
+  }
+
+  el.archiveList.innerHTML = "";
+
+  items.forEach((day) => {
+    const details = document.createElement("details");
+    details.className = "archive-day";
+
+    const logs = day.logs || {};
+
+    details.innerHTML = `
+      <summary>${escapeHtml(day.date || "giorno senza data")}</summary>
+
+      <div class="archive-day-content">
+        <p class="archive-objective">
+          ${escapeHtml(day.dailyObjective || "Obiettivo non disponibile")}
+        </p>
+
+        ${renderArchiveLog("06:00", logs["06"])}
+        ${renderArchiveLog("09:00", logs["09"])}
+        ${renderArchiveLog("12:00", logs["12"])}
+        ${renderArchiveLog("15:00", logs["15"])}
+        ${renderArchiveLog("18:00", logs["18"])}
+        ${renderArchiveLog("20:00", logs["20"])}
+      </div>
+    `;
+
+    el.archiveList.appendChild(details);
+  });
+}
+
+function renderArchiveLog(label, log) {
+  if (!log || !clean(log.text)) return "";
+
+  return `
+    <p class="archive-log">
+      <span>[${escapeHtml(label)}] [${escapeHtml(log.category || "MAT")}]</span>
+      ${escapeHtml(log.text)}
+    </p>
+  `;
 }
 
 async function typeLine(label, category, text) {
