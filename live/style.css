@@ -687,7 +687,87 @@ summary {
 
   .social-card:nth-child(4) strong {
     font-size: 15px;
-  }
+  }.archive-section {
+  margin-top: 16px;
+  border: 1px solid var(--border-yellow);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.48);
+  overflow: hidden;
+}
+
+.archive-header {
+  padding: 18px;
+  border-bottom: 1px solid var(--border-yellow);
+  background: rgba(0, 0, 0, 0.42);
+  text-align: center;
+}
+
+.archive-header h2 {
+  margin: 0;
+  color: var(--yellow);
+  font-size: clamp(22px, 5vw, 38px);
+  text-transform: uppercase;
+}
+
+.archive-header p {
+  margin: 10px auto 0;
+  max-width: 760px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.archive-list {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.archive-day {
+  border: 1px solid rgba(255, 208, 0, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+  overflow: hidden;
+}
+
+.archive-day summary {
+  padding: 14px;
+  cursor: pointer;
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+.archive-day-content {
+  padding: 0 14px 14px;
+  color: var(--white);
+}
+
+.archive-objective {
+  margin: 0 0 12px;
+  color: var(--yellow-strong);
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+
+.archive-log {
+  margin: 0 0 10px;
+  color: var(--green);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.archive-log span {
+  color: var(--muted);
+}
+
+.archive-empty {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
 
   .actions {
     gap: 8px;
