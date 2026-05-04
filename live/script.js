@@ -43,36 +43,38 @@ let audioEnabled = false;
 let logInterval = null;
 let communityInterval = null;
 let lastCommunityCommandId = null;
-let isTyping = false;
+let terminalQueue = Promise.resolve();
 
 const $ = (id) => document.getElementById(id);
 
-const el = {
-  dailyObjective: $("dailyObjective"),
-  instagramFollowers: $("instagramFollowers"),
-  telegramUsers: $("telegramUsers"),
-  tiktokFollowers: $("tiktokFollowers"),
-  youtubeStatus: $("youtubeStatus"),
-  solanaWallet: $("solanaWallet"),
-  minimumDonation: $("minimumDonation"),
-  instagramLink: $("instagramLink"),
-  telegramLink: $("telegramLink"),
-  tiktokLink: $("tiktokLink"),
-  terminalLink: $("terminalLink"),
-  donateBtn: $("donateBtn"),
-  copyWalletBtn: $("copyWalletBtn"),
-  terminal: $("terminal"),
-  ambientAudio: $("ambientAudio"),
-  toggleAudioBtn: $("toggleAudioBtn"),
-  toast: $("toast"),
-  matAvatar: $("matAvatar"),
-  matPlaceholder: $("matPlaceholder"),
-  archiveList: $("archiveList")
-};
+let el = {};
 
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
+  el = {
+    dailyObjective: $("dailyObjective"),
+    instagramFollowers: $("instagramFollowers"),
+    telegramUsers: $("telegramUsers"),
+    tiktokFollowers: $("tiktokFollowers"),
+    youtubeStatus: $("youtubeStatus"),
+    solanaWallet: $("solanaWallet"),
+    minimumDonation: $("minimumDonation"),
+    instagramLink: $("instagramLink"),
+    telegramLink: $("telegramLink"),
+    tiktokLink: $("tiktokLink"),
+    terminalLink: $("terminalLink"),
+    donateBtn: $("donateBtn"),
+    copyWalletBtn: $("copyWalletBtn"),
+    terminal: $("terminal"),
+    ambientAudio: $("ambientAudio"),
+    toggleAudioBtn: $("toggleAudioBtn"),
+    toast: $("toast"),
+    matAvatar: $("matAvatar"),
+    matPlaceholder: $("matPlaceholder"),
+    archiveList: $("archiveList")
+  };
+
   setupButtons();
   setupMatFallback();
   loadConfig();
@@ -138,6 +140,7 @@ function startTerminal() {
   if (!el.terminal) return;
 
   el.terminal.innerHTML = "";
+  terminalQueue = Promise.resolve();
 
   clearInterval(logInterval);
   clearInterval(communityInterval);
@@ -148,9 +151,7 @@ function startTerminal() {
   if (!hasMission && !hasLogs) {
     typeLine(nowLabel(), "STANDBY", "In attesa dell'input serale da Termux.");
   } else {
-    typeLine(nowLabel(), "BOOT", "Storico della giornata caricato. Mat mostra i log già completati.");
-
-    setTimeout(printTodayUnlockedLogs, 1200);
+    printTodayUnlockedLogs();
 
     setTimeout(() => {
       const next = getNextLog();
@@ -160,12 +161,12 @@ function startTerminal() {
       } else {
         typeLine(nowLabel(), "WAIT", "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00.");
       }
-    }, 2800);
+    }, 1200);
 
     logInterval = setInterval(checkScheduledLog, 20000);
   }
 
-  setTimeout(printCommunitySignal, 5000);
+  setTimeout(printCommunitySignal, 9000);
   communityInterval = setInterval(printCommunitySignal, 3 * 60 * 1000);
 
   loadArchiveIndex();
@@ -175,7 +176,7 @@ function printTodayUnlockedLogs() {
   const now = new Date();
   const currentHour = now.getHours();
 
-  logSchedule.forEach((item, index) => {
+  logSchedule.forEach((item) => {
     if (currentHour < item.hour) return;
 
     const log = config.logs?.[item.key];
@@ -184,12 +185,10 @@ function printTodayUnlockedLogs() {
     const storageKey = getStorageKey(item.key);
     localStorage.setItem(storageKey, "printed");
 
-    setTimeout(() => {
-      typeLine(item.label, log.category || "MAT", log.text);
-    }, index * 850);
+    typeLine(item.label, log.category || "MAT", log.text);
 
-    if (item.key === "09" && Array.isArray(config.selectedCommands) && config.selectedCommands.length) {
-      setTimeout(printSelectedCommand, index * 850 + 1500);
+    if (item.key === "09") {
+      printSelectedCommand();
     }
   });
 }
@@ -212,7 +211,7 @@ function checkScheduledLog() {
   typeLine(item.label, log.category || "MAT", log.text);
 
   if (item.key === "09") {
-    setTimeout(printSelectedCommand, 1700);
+    printSelectedCommand();
   }
 }
 
@@ -235,10 +234,7 @@ function printSelectedCommand() {
   if (!command) return;
 
   typeLine("09:01", "COMMAND", `Comando selezionato da terminal.clochardcoin.it: “${command}”`);
-
-  setTimeout(() => {
-    typeLine("09:02", "MAT", "Lo userò come traccia della missione di oggi.");
-  }, 1800);
+  typeLine("09:02", "MAT", "Lo userò come traccia della missione di oggi.");
 }
 
 async function fetchCommunityCommands() {
@@ -285,10 +281,7 @@ async function printCommunitySignal() {
   const nickname = clean(item.nickname) || "utente_anonimo";
 
   typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
-
-  setTimeout(() => {
-    typeLine(nowLabel(), "MAT", "Segnale approvato. Potrebbe diventare parte del prossimo log.");
-  }, 1800);
+  typeLine(nowLabel(), "MAT", "Segnale approvato. Potrebbe diventare parte del prossimo log.");
 }
 
 async function loadArchiveIndex() {
@@ -306,7 +299,6 @@ async function loadArchiveIndex() {
       if (!response.ok) continue;
 
       const data = await response.json();
-
       if (!data || !data.date) continue;
 
       archiveItems.push(data);
@@ -383,14 +375,13 @@ function renderArchiveLog(label, log) {
   `;
 }
 
-async function typeLine(label, category, text) {
+function typeLine(label, category, text) {
+  terminalQueue = terminalQueue.then(() => typeLineInternal(label, category, text));
+  return terminalQueue;
+}
+
+async function typeLineInternal(label, category, text) {
   if (!el.terminal || !clean(text)) return;
-
-  while (isTyping) {
-    await sleep(80);
-  }
-
-  isTyping = true;
 
   const line = document.createElement("p");
   line.className = "terminal-line cursor";
@@ -410,9 +401,6 @@ async function typeLine(label, category, text) {
   }
 
   line.classList.remove("cursor");
-  limitLines();
-
-  isTyping = false;
 }
 
 function formatLine(text) {
@@ -425,14 +413,6 @@ function formatLine(text) {
     <span class="category">${escapeHtml(match[2])}</span>
     ${escapeHtml(match[3])}
   `;
-}
-
-function limitLines() {
-  if (!el.terminal) return;
-
-  while (el.terminal.children.length > 16) {
-    el.terminal.removeChild(el.terminal.firstChild);
-  }
 }
 
 function getStorageKey(logKey) {
