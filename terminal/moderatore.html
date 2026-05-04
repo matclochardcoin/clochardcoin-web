@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Moderatore Mat Clochard</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="background-stars"></div>
+  <div class="background-glow"></div>
+
+  <main class="page">
+    <header class="hero">
+      <p class="domain">terminal.clochardcoin.it/moderatore</p>
+      <h1>MODERATORE MAT</h1>
+      <p class="subtitle">Approva o blocca i comandi della community.</p>
+    </header>
+
+    <section class="terminal-card">
+      <div class="terminal-top">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <p>/mat_clochard/moderation_panel</p>
+      </div>
+
+      <div class="command-form" id="loginBox">
+        <label for="email">Email moderatore</label>
+        <input id="email" type="email" placeholder="La tua email Supabase" />
+
+        <button id="loginBtn" type="button">Invia magic link</button>
+
+        <p class="local-note">
+          Riceverai un link di accesso via email. Dopo il login potrai approvare o bloccare i comandi.
+        </p>
+      </div>
+
+      <div class="command-form hidden" id="moderationBox">
+        <button id="logoutBtn" type="button">Esci</button>
+        <button id="refreshBtn" type="button">Aggiorna comandi</button>
+
+        <div id="moderationList" class="commands-list"></div>
+      </div>
+    </section>
+
+    <section class="actions">
+      <a href="./">Torna al terminale</a>
+      <a href="../live/">Vai alla live</a>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./moderatore.js?v=1"></script>
+</body>
+</html>
