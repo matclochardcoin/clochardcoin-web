@@ -1,9 +1,9 @@
 {
-  "date": "04 05 202",
-  "dailyObjective": "Farmi conoscere, sopravvivendo al web3.",
-  "instagramFollowers": 141,
+  "date": "04-05-2026",
+  "dailyObjective": "trovare 10 follower su instagram",
+  "instagramFollowers": 142,
   "telegramUsers": 7,
-  "tiktokFollowers": 3,
+  "tiktokFollowers": 2,
   "youtubeStatus": "(a breve)",
   "solanaWallet": "5sc1W9g5VVyBW9EhU5oYhhDF49K751mKjZWo92iemTji",
   "minimumDonation": "0.01 SOL",
@@ -18,7 +18,7 @@
   "logs": {
     "06": {
       "category": "BOOT",
-      "text": "Mat si accende. Obiettivo caricato: Farmi conoscere, sopravvivendo al web3.. La giornata inizia dal terminale."
+      "text": "Mat si accende. Obiettivo caricato: trovare 10 follower su instagram. La giornata inizia dal terminale."
     },
     "09": {
       "category": "USER_SIGNAL",
@@ -26,7 +26,7 @@
     },
     "12": {
       "category": "SCAN",
-      "text": "Check centrale. Mat analizza i primi segnali collegati all'obiettivo: Farmi conoscere, sopravvivendo al web3.. La missione continua."
+      "text": "Check centrale. Mat analizza i primi segnali collegati all'obiettivo: trovare 10 follower su instagram. La missione continua."
     },
     "15": {
       "category": "RESULT",
@@ -38,7 +38,7 @@
     },
     "20": {
       "category": "REPORT",
-      "text": "Riassunto della giornata: Mat ha lavorato sull'obiettivo “Farmi conoscere, sopravvivendo al web3.”. Il percorso continua domani con un nuovo input."
+      "text": "Riassunto della giornata: Mat ha lavorato sull'obiettivo “trovare 10 follower su instagram”. Il percorso continua domani con un nuovo input."
     }
   }
 }
