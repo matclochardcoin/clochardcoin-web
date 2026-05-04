@@ -1,3 +1,7 @@
+const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+
+const TABLE_NAME = "mat_commands";
 const STORAGE_KEY = "mat-clochard-user-commands";
 
 const form = document.getElementById("commandForm");
@@ -42,6 +46,53 @@ function formatDate(date) {
   }).format(date);
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function containsBlockedContent(text) {
+  const blocked = [
+    "password",
+    "telefono",
+    "indirizzo",
+    "codice fiscale",
+    "iban",
+    "carta di credito"
+  ];
+
+  const lower = text.toLowerCase();
+
+  return blocked.some((word) => lower.includes(word));
+}
+
+async function sendCommandToSupabase({ nickname, command }) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify({
+      nickname,
+      command,
+      status: "pending",
+      source: "terminal.clochardcoin.it"
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Errore invio comando");
+  }
+}
+
 function renderCommands() {
   const commands = getCommands();
 
@@ -74,35 +125,11 @@ function renderCommands() {
     });
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function containsBlockedContent(text) {
-  const blocked = [
-    "password",
-    "telefono",
-    "indirizzo",
-    "codice fiscale",
-    "iban",
-    "carta di credito"
-  ];
-
-  const lower = text.toLowerCase();
-
-  return blocked.some((word) => lower.includes(word));
-}
-
 commandInput.addEventListener("input", () => {
   charCount.textContent = commandInput.value.length;
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const nickname = clean(nicknameInput.value) || "utente_anonimo";
@@ -128,24 +155,38 @@ form.addEventListener("submit", (event) => {
     return;
   }
 
-  const commands = getCommands();
+  const submitBtn = document.getElementById("submitBtn");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Invio in corso...";
 
-  commands.push({
-    nickname,
-    command,
-    createdAt: formatDate(new Date()),
-    status: "pending"
-  });
+  try {
+    await sendCommandToSupabase({ nickname, command });
 
-  saveCommands(commands);
+    const commands = getCommands();
 
-  form.reset();
-  charCount.textContent = "0";
-  successBox.classList.remove("hidden");
+    commands.push({
+      nickname,
+      command,
+      createdAt: formatDate(new Date()),
+      status: "pending"
+    });
 
-  renderCommands();
+    saveCommands(commands);
 
-  showToast("Comando salvato su questo dispositivo.");
+    form.reset();
+    charCount.textContent = "0";
+    successBox.classList.remove("hidden");
+
+    renderCommands();
+
+    showToast("Comando inviato a Mat.");
+  } catch (error) {
+    console.error(error);
+    showToast("Errore invio comando. Controlla Supabase/RLS.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Invia comando";
+  }
 });
 
 clearLocalBtn.addEventListener("click", () => {
