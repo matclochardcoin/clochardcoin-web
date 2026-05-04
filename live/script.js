@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
 const COMMANDS_TABLE = "mat_commands";
 
 const fallbackConfig = {
@@ -29,24 +29,15 @@ const fallbackConfig = {
   }
 };
 
-const logSchedule = [
-  { hour: 6, key: "06", label: "06:00" },
-  { hour: 9, key: "09", label: "09:00" },
-  { hour: 12, key: "12", label: "12:00" },
-  { hour: 15, key: "15", label: "15:00" },
-  { hour: 18, key: "18", label: "18:00" },
-  { hour: 20, key: "20", label: "20:00" }
-];
-
 let config = structuredClone(fallbackConfig);
 let audioEnabled = false;
-let logInterval = null;
 let communityInterval = null;
-let lastCommunityCommandId = null;
 let terminalQueue = Promise.resolve();
+let shownGeneratedLogs = 0;
+let generatedLogsInterval = null;
+let lastCommunityCommandId = null;
 
 const $ = (id) => document.getElementById(id);
-
 let el = {};
 
 document.addEventListener("DOMContentLoaded", init);
@@ -142,29 +133,14 @@ function startTerminal() {
   el.terminal.innerHTML = "";
   terminalQueue = Promise.resolve();
 
-  clearInterval(logInterval);
   clearInterval(communityInterval);
+  clearInterval(generatedLogsInterval);
 
-  const hasMission = clean(config.dailyObjective).length > 0;
-  const hasLogs = Object.values(config.logs || {}).some((log) => clean(log?.text).length > 0);
+  typeLine(nowLabel(), "BOOT", "CLOCHARDCOIN LIVE TERMINAL ONLINE.");
+  typeLine(nowLabel(), "MAT_AI", "Connessione ai log generati da Termux...");
 
-  if (!hasMission && !hasLogs) {
-    typeLine(nowLabel(), "STANDBY", "In attesa dell'input serale da Termux.");
-  } else {
-    printTodayUnlockedLogs();
-
-    setTimeout(() => {
-      const next = getNextLog();
-
-      if (next) {
-        typeLine(nowLabel(), "WAIT", `Prossimo log programmato: ${next.label}.`);
-      } else {
-        typeLine(nowLabel(), "WAIT", "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00.");
-      }
-    }, 1200);
-
-    logInterval = setInterval(checkScheduledLog, 20000);
-  }
+  loadGeneratedLogs();
+  generatedLogsInterval = setInterval(loadGeneratedLogs, 10000);
 
   setTimeout(printCommunitySignal, 9000);
   communityInterval = setInterval(printCommunitySignal, 3 * 60 * 1000);
@@ -172,69 +148,52 @@ function startTerminal() {
   loadArchiveIndex();
 }
 
-function printTodayUnlockedLogs() {
-  const now = new Date();
-  const currentHour = now.getHours();
+async function loadGeneratedLogs() {
+  try {
+    const response = await fetch(`../logs.json?nocache=${Date.now()}`, {
+      cache: "no-store"
+    });
 
-  logSchedule.forEach((item) => {
-    if (currentHour < item.hour) return;
-
-    const log = config.logs?.[item.key];
-    if (!log || !clean(log.text)) return;
-
-    const storageKey = getStorageKey(item.key);
-    localStorage.setItem(storageKey, "printed");
-
-    typeLine(item.label, log.category || "MAT", log.text);
-
-    if (item.key === "09") {
-      printSelectedCommand();
+    if (!response.ok) {
+      typeLine(nowLabel(), "WAIT", "logs.json non ancora disponibile.");
+      return;
     }
-  });
-}
 
-function checkScheduledLog() {
-  const now = new Date();
-  const hour = now.getHours();
-  const minute = now.getMinutes();
+    const logs = await response.json();
 
-  const item = logSchedule.find((log) => log.hour === hour);
-  if (!item || minute > 4) return;
+    if (!Array.isArray(logs)) return;
 
-  const storageKey = getStorageKey(item.key);
-  if (localStorage.getItem(storageKey) === "printed") return;
+    for (let i = shownGeneratedLogs; i < logs.length; i++) {
+      const log = logs[i];
 
-  const log = config.logs?.[item.key];
-  if (!log || !clean(log.text)) return;
+      if (!log || !clean(log.message)) continue;
 
-  localStorage.setItem(storageKey, "printed");
-  typeLine(item.label, log.category || "MAT", log.text);
+      if (clean(log.objective)) {
+        setText(el.dailyObjective, log.objective);
+      }
 
-  if (item.key === "09") {
-    printSelectedCommand();
+      const label = `${String(log.hour).padStart(2, "0")}:00`;
+      const category = Number(log.hour) === 20 ? "REPORT" : "MAT";
+
+      typeLine(label, category, log.message);
+
+      shownGeneratedLogs++;
+    }
+
+    if (logs.length === shownGeneratedLogs) {
+      const idleMessages = [
+        "Monitoraggio segnali community...",
+        "Sincronizzazione narrativa in corso...",
+        "Mat resta online in attesa del prossimo log.",
+        "Analisi presenza digitale attiva..."
+      ];
+
+      const msg = idleMessages[Math.floor(Math.random() * idleMessages.length)];
+      typeLine(nowLabel(), "LIVE", msg);
+    }
+  } catch (error) {
+    console.warn("Errore lettura logs.json:", error);
   }
-}
-
-function getNextLog() {
-  const now = new Date();
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-
-  return logSchedule.find((item) => {
-    if (hour < item.hour) return true;
-    if (hour === item.hour && minute <= 4) return true;
-    return false;
-  });
-}
-
-function printSelectedCommand() {
-  if (!Array.isArray(config.selectedCommands)) return;
-
-  const command = clean(config.selectedCommands[0]);
-  if (!command) return;
-
-  typeLine("09:01", "COMMAND", `Comando selezionato da terminal.clochardcoin.it: “${command}”`);
-  typeLine("09:02", "MAT", "Lo userò come traccia della missione di oggi.");
 }
 
 async function fetchCommunityCommands() {
@@ -413,11 +372,6 @@ function formatLine(text) {
     <span class="category">${escapeHtml(match[2])}</span>
     ${escapeHtml(match[3])}
   `;
-}
-
-function getStorageKey(logKey) {
-  const date = clean(config.date) || new Date().toISOString().slice(0, 10);
-  return `mat-log-${date}-${logKey}`;
 }
 
 function nowLabel() {
