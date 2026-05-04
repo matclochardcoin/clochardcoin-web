@@ -1,7 +1,7 @@
 const fs = require("fs");
 
 const now = new Date();
-const hour = now.getHours();
+const currentHour = now.getHours();
 const date = now.toLocaleDateString("it-IT");
 
 let objective = "Continuare a costruire";
@@ -11,29 +11,42 @@ try {
   objective = obj.objective;
 } catch (e) {}
 
-let message = "";
+const timeline = [
+  { hour: 6, message: "Mat è stato attivato. Inizio operazioni." },
+  { hour: 9, message: "Mat raccoglie dati dal mondo reale." },
+  { hour: 12, message: "Mat analizza informazioni e pattern." },
+  { hour: 15, message: "Mat costruisce connessioni nel sistema." },
+  { hour: 18, message: "Mat espande la presenza digitale." },
+  { hour: 20, message: "Mat chiude il ciclo e salva i risultati." }
+];
 
-if (hour < 9) {
-  message = "Mat è stato attivato. Inizio operazioni.";
-} else if (hour < 12) {
-  message = "Mat sta raccogliendo dati dalla rete.";
-} else if (hour < 15) {
-  message = "Mat analizza le informazioni.";
-} else if (hour < 18) {
-  message = "Mat costruisce connessioni.";
-} else if (hour < 20) {
-  message = "Mat espande la presenza.";
-} else {
-  message = "Mat chiude il ciclo giornaliero.";
+// trova il blocco giusto in base all'ora
+let selected = timeline[0];
+
+for (let i = 0; i < timeline.length; i++) {
+  if (currentHour >= timeline[i].hour) {
+    selected = timeline[i];
+  }
 }
 
-const log = {
+const logEntry = {
   date,
-  hour,
+  hour: selected.hour,
   objective,
-  message
+  message: selected.message
 };
 
-fs.writeFileSync("./log.json", JSON.stringify(log, null, 2));
+// leggiamo log esistente (array)
+let logs = [];
 
-console.log("Log aggiornato:", log);
+try {
+  logs = JSON.parse(fs.readFileSync("./logs.json"));
+} catch (e) {}
+
+// aggiungiamo nuovo log
+logs.push(logEntry);
+
+// salviamo tutto
+fs.writeFileSync("./logs.json", JSON.stringify(logs, null, 2));
+
+console.log("Log aggiunto:", logEntry);
