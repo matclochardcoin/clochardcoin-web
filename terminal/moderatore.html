@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Moderatore Mat Clochard</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -16,7 +15,7 @@
     <header class="hero">
       <p class="domain">terminal.clochardcoin.it/moderatore</p>
       <h1>MODERATORE MAT</h1>
-      <p class="subtitle">Approva o blocca i comandi della community.</p>
+      <p class="subtitle">Approva o blocca i comandi prima che entrino nella live.</p>
     </header>
 
     <section class="terminal-card">
@@ -26,19 +25,19 @@
       </div>
 
       <div class="command-form" id="loginBox">
-        <label for="email">Email moderatore</label>
-        <input id="email" type="email" placeholder="La tua email Supabase" />
+        <label for="adminPassword">Password moderatore</label>
+        <input id="adminPassword" type="password" placeholder="Inserisci password" />
 
-        <button id="loginBtn" type="button">Invia magic link</button>
+        <button id="loginBtn" type="button">Entra</button>
 
         <p class="local-note">
-          Riceverai un link di accesso via email. Dopo il login potrai approvare o bloccare i comandi.
+          Pannello riservato alla gestione dei comandi inviati dalla community.
         </p>
       </div>
 
       <div class="command-form hidden" id="moderationBox">
-        <button id="logoutBtn" type="button">Esci</button>
         <button id="refreshBtn" type="button">Aggiorna comandi</button>
+        <button id="logoutBtn" type="button">Esci</button>
 
         <div id="moderationList" class="commands-list"></div>
       </div>
@@ -52,7 +51,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./moderatore.js?v=1"></script>
 </body>
 </html>
