@@ -489,11 +489,30 @@ h1 {
 .terminal {
   min-height: 330px;
   max-height: 470px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 18px;
+  padding-right: 12px;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.42)),
     rgba(0, 0, 0, 0.56);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--yellow) #080808;
+}
+
+.terminal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal::-webkit-scrollbar-track {
+  background: #080808;
+  border-radius: 20px;
+}
+
+.terminal::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--yellow), var(--red));
+  border-radius: 20px;
 }
 
 .terminal-line {
@@ -780,7 +799,9 @@ summary {
   }
 
   .terminal {
-    min-height: 320px;
-    padding: 14px;
-  }
+  min-height: 320px;
+  max-height: 420px;
+  padding: 14px;
+  padding-right: 10px;
+}
 }
