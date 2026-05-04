@@ -177,19 +177,15 @@ function checkScheduledLog() {
   const minute = now.getMinutes();
 
   const item = logSchedule.find((log) => log.hour === hour);
-
   if (!item) return;
 
   const insideWindow = minute >= 0 && minute <= 4;
-
   if (!insideWindow) return;
 
   const storageKey = getStorageKey(item.key);
-
   if (localStorage.getItem(storageKey) === "printed") return;
 
   const log = config.logs[item.key];
-
   if (!log || !clean(log.text)) return;
 
   localStorage.setItem(storageKey, "printed");
@@ -218,7 +214,6 @@ function printSelectedCommand() {
   if (config.selectedCommands.length === 0) return;
 
   const command = clean(config.selectedCommands[0]);
-
   if (!command) return;
 
   typeLine(
@@ -235,7 +230,7 @@ function printSelectedCommand() {
     const query =
       `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}` +
       `?select=id,nickname,command,created_at,status` +
-      `&status=eq.pending` +
+      `&status=eq.approved` +
       `&order=created_at.desc` +
       `&limit=5`;
 
@@ -283,7 +278,7 @@ async function printCommunitySignal() {
     typeLine(
       nowLabel(),
       "MAT",
-      "Segnale ricevuto. Potrebbe diventare parte del prossimo log."
+      "Segnale approvato. Potrebbe diventare parte del prossimo log."
     );
   }, 1800);
 }
