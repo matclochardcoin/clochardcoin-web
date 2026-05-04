@@ -13,6 +13,9 @@ const successBox = document.getElementById("successBox");
 const commandsList = document.getElementById("commandsList");
 const clearLocalBtn = document.getElementById("clearLocalBtn");
 const toast = document.getElementById("toast");
+const submitBtn = document.getElementById("submitBtn");
+
+let isSending = false;
 
 function clean(value) {
   return String(value || "").trim();
@@ -62,7 +65,10 @@ function containsBlockedContent(text) {
     "indirizzo",
     "codice fiscale",
     "iban",
-    "carta di credito"
+    "carta di credito",
+    "numero carta",
+    "documento",
+    "residenza"
   ];
 
   const lower = text.toLowerCase();
@@ -132,6 +138,8 @@ commandInput.addEventListener("input", () => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
+  if (isSending) return;
+
   const nickname = clean(nicknameInput.value) || "utente_anonimo";
   const command = clean(commandInput.value);
 
@@ -145,6 +153,16 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (command.length > 240) {
+    showToast("Comando troppo lungo. Massimo 240 caratteri.");
+    return;
+  }
+
+  if (nickname.length > 24) {
+    showToast("Nickname troppo lungo. Massimo 24 caratteri.");
+    return;
+  }
+
   if (!rulesAccepted.checked) {
     showToast("Devi accettare le regole della community.");
     return;
@@ -155,7 +173,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const submitBtn = document.getElementById("submitBtn");
+  isSending = true;
   submitBtn.disabled = true;
   submitBtn.textContent = "Invio in corso...";
 
@@ -182,8 +200,9 @@ form.addEventListener("submit", async (event) => {
     showToast("Comando inviato a Mat.");
   } catch (error) {
     console.error(error);
-    showToast("Errore invio comando. Controlla Supabase/RLS.");
+    showToast("Errore invio. Controlla tabella o policy Supabase.");
   } finally {
+    isSending = false;
     submitBtn.disabled = false;
     submitBtn.textContent = "Invia comando";
   }
