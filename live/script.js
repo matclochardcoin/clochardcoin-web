@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const SUPABASE_KEY = "INSERISCI_QUI_LA_TUA_ANON_KEY";
 const COMMANDS_TABLE = "mat_commands";
 
 const fallbackConfig = {
@@ -38,34 +38,45 @@ const logSchedule = [
   { hour: 20, key: "20", label: "20:00" }
 ];
 
-let config = fallbackConfig;
+let config = structuredClone(fallbackConfig);
 let audioEnabled = false;
 let logInterval = null;
 let communityInterval = null;
 let lastCommunityCommandId = null;
+let isTyping = false;
+
+const $ = (id) => document.getElementById(id);
 
 const el = {
-  dailyObjective: document.getElementById("dailyObjective"),
-  instagramFollowers: document.getElementById("instagramFollowers"),
-  telegramUsers: document.getElementById("telegramUsers"),
-  tiktokFollowers: document.getElementById("tiktokFollowers"),
-  youtubeStatus: document.getElementById("youtubeStatus"),
-  solanaWallet: document.getElementById("solanaWallet"),
-  minimumDonation: document.getElementById("minimumDonation"),
-  instagramLink: document.getElementById("instagramLink"),
-  telegramLink: document.getElementById("telegramLink"),
-  tiktokLink: document.getElementById("tiktokLink"),
-  terminalLink: document.getElementById("terminalLink"),
-  donateBtn: document.getElementById("donateBtn"),
-  copyWalletBtn: document.getElementById("copyWalletBtn"),
-  terminal: document.getElementById("terminal"),
-  ambientAudio: document.getElementById("ambientAudio"),
-  toggleAudioBtn: document.getElementById("toggleAudioBtn"),
-  toast: document.getElementById("toast"),
-  matAvatar: document.getElementById("matAvatar"),
-  matPlaceholder: document.getElementById("matPlaceholder"),
-  archiveList: document.getElementById("archiveList")
+  dailyObjective: $("dailyObjective"),
+  instagramFollowers: $("instagramFollowers"),
+  telegramUsers: $("telegramUsers"),
+  tiktokFollowers: $("tiktokFollowers"),
+  youtubeStatus: $("youtubeStatus"),
+  solanaWallet: $("solanaWallet"),
+  minimumDonation: $("minimumDonation"),
+  instagramLink: $("instagramLink"),
+  telegramLink: $("telegramLink"),
+  tiktokLink: $("tiktokLink"),
+  terminalLink: $("terminalLink"),
+  donateBtn: $("donateBtn"),
+  copyWalletBtn: $("copyWalletBtn"),
+  terminal: $("terminal"),
+  ambientAudio: $("ambientAudio"),
+  toggleAudioBtn: $("toggleAudioBtn"),
+  toast: $("toast"),
+  matAvatar: $("matAvatar"),
+  matPlaceholder: $("matPlaceholder"),
+  archiveList: $("archiveList")
 };
+
+document.addEventListener("DOMContentLoaded", init);
+
+function init() {
+  setupButtons();
+  setupMatFallback();
+  loadConfig();
+}
 
 async function loadConfig() {
   try {
@@ -79,16 +90,16 @@ async function loadConfig() {
     config = mergeConfig(fallbackConfig, external);
   } catch (error) {
     console.warn("Uso fallback:", error);
-    config = fallbackConfig;
+    config = structuredClone(fallbackConfig);
   }
 
   applyConfig();
   startTerminal();
 }
 
-function mergeConfig(base, external) {
+function mergeConfig(base, external = {}) {
   return {
-    ...base,
+    ...structuredClone(base),
     ...external,
     socialLinks: {
       ...base.socialLinks,
@@ -105,46 +116,41 @@ function mergeConfig(base, external) {
 }
 
 function applyConfig() {
-  el.dailyObjective.textContent =
-    clean(config.dailyObjective) || "In attesa dell'input serale da Termux";
+  setText(el.dailyObjective, clean(config.dailyObjective) || "In attesa dell'input serale da Termux");
+  setText(el.instagramFollowers, config.instagramFollowers);
+  setText(el.telegramUsers, config.telegramUsers);
+  setText(el.tiktokFollowers, config.tiktokFollowers);
+  setText(el.youtubeStatus, config.youtubeStatus);
+  setText(el.solanaWallet, config.solanaWallet);
+  setText(el.minimumDonation, config.minimumDonation);
 
-  el.instagramFollowers.textContent = config.instagramFollowers;
-  el.telegramUsers.textContent = config.telegramUsers;
-  el.tiktokFollowers.textContent = config.tiktokFollowers;
-  el.youtubeStatus.textContent = config.youtubeStatus;
-  el.solanaWallet.textContent = config.solanaWallet;
-  el.minimumDonation.textContent = config.minimumDonation;
+  setHref(el.instagramLink, config.socialLinks.instagram);
+  setHref(el.telegramLink, config.socialLinks.telegram);
+  setHref(el.tiktokLink, config.socialLinks.tiktok);
+  setHref(el.terminalLink, config.socialLinks.terminal || "https://terminal.clochardcoin.it");
 
-  el.instagramLink.href = config.socialLinks.instagram || "#";
-  el.telegramLink.href = config.socialLinks.telegram || "#";
-  el.tiktokLink.href = config.socialLinks.tiktok || "#";
-  el.terminalLink.href =
-    config.socialLinks.terminal || "https://terminal.clochardcoin.it";
-
-  el.donateBtn.textContent = `Dona ${config.minimumDonation}`;
+  if (el.donateBtn) {
+    el.donateBtn.textContent = `Dona ${config.minimumDonation}`;
+  }
 }
 
 function startTerminal() {
+  if (!el.terminal) return;
+
   el.terminal.innerHTML = "";
 
-  if (logInterval) clearInterval(logInterval);
-  if (communityInterval) clearInterval(communityInterval);
+  clearInterval(logInterval);
+  clearInterval(communityInterval);
 
   const hasMission = clean(config.dailyObjective).length > 0;
-  const hasLogs = Object.values(config.logs || {}).some((log) => clean(log.text).length > 0);
+  const hasLogs = Object.values(config.logs || {}).some((log) => clean(log?.text).length > 0);
 
   if (!hasMission && !hasLogs) {
     typeLine(nowLabel(), "STANDBY", "In attesa dell'input serale da Termux.");
   } else {
-    typeLine(
-      nowLabel(),
-      "BOOT",
-      "Storico della giornata caricato. Mat mostra i log già completati."
-    );
+    typeLine(nowLabel(), "BOOT", "Storico della giornata caricato. Mat mostra i log già completati.");
 
-    setTimeout(() => {
-      printTodayUnlockedLogs();
-    }, 1200);
+    setTimeout(printTodayUnlockedLogs, 1200);
 
     setTimeout(() => {
       const next = getNextLog();
@@ -152,26 +158,15 @@ function startTerminal() {
       if (next) {
         typeLine(nowLabel(), "WAIT", `Prossimo log programmato: ${next.label}.`);
       } else {
-        typeLine(
-          nowLabel(),
-          "WAIT",
-          "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00."
-        );
+        typeLine(nowLabel(), "WAIT", "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00.");
       }
     }, 2800);
 
-    logInterval = setInterval(() => {
-      checkScheduledLog();
-    }, 20000);
+    logInterval = setInterval(checkScheduledLog, 20000);
   }
 
-  setTimeout(() => {
-    printCommunitySignal();
-  }, 5000);
-
-  communityInterval = setInterval(() => {
-    printCommunitySignal();
-  }, 3 * 60 * 1000);
+  setTimeout(printCommunitySignal, 5000);
+  communityInterval = setInterval(printCommunitySignal, 3 * 60 * 1000);
 
   loadArchiveIndex();
 }
@@ -179,17 +174,11 @@ function startTerminal() {
 function printTodayUnlockedLogs() {
   const now = new Date();
   const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
 
   logSchedule.forEach((item, index) => {
-    const logIsUnlocked =
-      currentHour > item.hour ||
-      (currentHour === item.hour && currentMinute >= 0);
+    if (currentHour < item.hour) return;
 
-    if (!logIsUnlocked) return;
-
-    const log = config.logs[item.key];
-
+    const log = config.logs?.[item.key];
     if (!log || !clean(log.text)) return;
 
     const storageKey = getStorageKey(item.key);
@@ -198,6 +187,10 @@ function printTodayUnlockedLogs() {
     setTimeout(() => {
       typeLine(item.label, log.category || "MAT", log.text);
     }, index * 850);
+
+    if (item.key === "09" && Array.isArray(config.selectedCommands) && config.selectedCommands.length) {
+      setTimeout(printSelectedCommand, index * 850 + 1500);
+    }
   });
 }
 
@@ -207,19 +200,15 @@ function checkScheduledLog() {
   const minute = now.getMinutes();
 
   const item = logSchedule.find((log) => log.hour === hour);
-  if (!item) return;
-
-  const insideWindow = minute >= 0 && minute <= 4;
-  if (!insideWindow) return;
+  if (!item || minute > 4) return;
 
   const storageKey = getStorageKey(item.key);
   if (localStorage.getItem(storageKey) === "printed") return;
 
-  const log = config.logs[item.key];
+  const log = config.logs?.[item.key];
   if (!log || !clean(log.text)) return;
 
   localStorage.setItem(storageKey, "printed");
-
   typeLine(item.label, log.category || "MAT", log.text);
 
   if (item.key === "09") {
@@ -241,16 +230,11 @@ function getNextLog() {
 
 function printSelectedCommand() {
   if (!Array.isArray(config.selectedCommands)) return;
-  if (config.selectedCommands.length === 0) return;
 
   const command = clean(config.selectedCommands[0]);
   if (!command) return;
 
-  typeLine(
-    "09:01",
-    "COMMAND",
-    `Comando selezionato da terminal.clochardcoin.it: “${command}”`
-  );
+  typeLine("09:01", "COMMAND", `Comando selezionato da terminal.clochardcoin.it: “${command}”`);
 
   setTimeout(() => {
     typeLine("09:02", "MAT", "Lo userò come traccia della missione di oggi.");
@@ -303,11 +287,7 @@ async function printCommunitySignal() {
   typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
 
   setTimeout(() => {
-    typeLine(
-      nowLabel(),
-      "MAT",
-      "Segnale approvato. Potrebbe diventare parte del prossimo log."
-    );
+    typeLine(nowLabel(), "MAT", "Segnale approvato. Potrebbe diventare parte del prossimo log.");
   }, 1800);
 }
 
@@ -404,7 +384,13 @@ function renderArchiveLog(label, log) {
 }
 
 async function typeLine(label, category, text) {
-  if (!clean(text)) return;
+  if (!el.terminal || !clean(text)) return;
+
+  while (isTyping) {
+    await sleep(80);
+  }
+
+  isTyping = true;
 
   const line = document.createElement("p");
   line.className = "terminal-line cursor";
@@ -425,6 +411,8 @@ async function typeLine(label, category, text) {
 
   line.classList.remove("cursor");
   limitLines();
+
+  isTyping = false;
 }
 
 function formatLine(text) {
@@ -432,10 +420,16 @@ function formatLine(text) {
 
   if (!match) return escapeHtml(text);
 
-  return `<span class="time">${escapeHtml(match[1])}</span> <span class="category">${escapeHtml(match[2])}</span> ${escapeHtml(match[3])}`;
+  return `
+    <span class="time">${escapeHtml(match[1])}</span>
+    <span class="category">${escapeHtml(match[2])}</span>
+    ${escapeHtml(match[3])}
+  `;
 }
 
 function limitLines() {
+  if (!el.terminal) return;
+
   while (el.terminal.children.length > 16) {
     el.terminal.removeChild(el.terminal.firstChild);
   }
@@ -471,6 +465,8 @@ function escapeHtml(value) {
 }
 
 function showToast(message) {
+  if (!el.toast) return;
+
   el.toast.textContent = message;
   el.toast.classList.add("show");
 
@@ -480,55 +476,71 @@ function showToast(message) {
 }
 
 function setupButtons() {
-  el.copyWalletBtn.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(config.solanaWallet);
-      showToast("Wallet copiato.");
-    } catch {
-      showToast("Copia non riuscita. Tieni premuto sul wallet.");
-    }
-  });
-
-  el.donateBtn.addEventListener("click", () => {
-    const amount = String(config.minimumDonation || "0.01 SOL").replace(" SOL", "");
-    const label = encodeURIComponent("Supporta Mat Clochard");
-    const solanaPayUrl = `solana:${config.solanaWallet}?amount=${amount}&label=${label}`;
-
-    window.location.href = solanaPayUrl;
-
-    setTimeout(() => {
-      showToast("Se il wallet non si apre, copia il wallet e invia manualmente.");
-    }, 800);
-  });
-
-  el.toggleAudioBtn.addEventListener("click", async () => {
-    if (!audioEnabled) {
+  if (el.copyWalletBtn) {
+    el.copyWalletBtn.addEventListener("click", async () => {
       try {
-        el.ambientAudio.volume = 0.22;
-        await el.ambientAudio.play();
-        audioEnabled = true;
-        el.toggleAudioBtn.textContent = "Disattiva musica ambient";
-        showToast("Musica ambient attivata.");
+        await navigator.clipboard.writeText(config.solanaWallet);
+        showToast("Wallet copiato.");
       } catch {
-        showToast("Audio non disponibile. Carica assets/ambient.mp3.");
+        showToast("Copia non riuscita. Tieni premuto sul wallet.");
       }
-      return;
-    }
+    });
+  }
 
-    el.ambientAudio.pause();
-    audioEnabled = false;
-    el.toggleAudioBtn.textContent = "Attiva musica ambient";
-    showToast("Musica ambient disattivata.");
-  });
+  if (el.donateBtn) {
+    el.donateBtn.addEventListener("click", () => {
+      const amount = String(config.minimumDonation || "0.01 SOL").replace(" SOL", "");
+      const label = encodeURIComponent("Supporta Mat Clochard");
+      const solanaPayUrl = `solana:${config.solanaWallet}?amount=${amount}&label=${label}`;
+
+      window.location.href = solanaPayUrl;
+
+      setTimeout(() => {
+        showToast("Se il wallet non si apre, copia il wallet e invia manualmente.");
+      }, 800);
+    });
+  }
+
+  if (el.toggleAudioBtn && el.ambientAudio) {
+    el.toggleAudioBtn.addEventListener("click", async () => {
+      if (!audioEnabled) {
+        try {
+          el.ambientAudio.volume = 0.22;
+          await el.ambientAudio.play();
+
+          audioEnabled = true;
+          el.toggleAudioBtn.textContent = "Disattiva musica ambient";
+          showToast("Musica ambient attivata.");
+        } catch {
+          showToast("Audio non disponibile. Carica assets/ambient.mp3.");
+        }
+
+        return;
+      }
+
+      el.ambientAudio.pause();
+      audioEnabled = false;
+      el.toggleAudioBtn.textContent = "Attiva musica ambient";
+      showToast("Musica ambient disattivata.");
+    });
+  }
 }
 
 function setupMatFallback() {
+  if (!el.matAvatar || !el.matPlaceholder) return;
+
   el.matAvatar.addEventListener("error", () => {
     el.matAvatar.style.display = "none";
     el.matPlaceholder.style.display = "grid";
   });
 }
 
-setupButtons();
-setupMatFallback();
-loadConfig();
+function setText(node, value) {
+  if (!node) return;
+  node.textContent = value;
+}
+
+function setHref(node, value) {
+  if (!node) return;
+  node.href = value || "#";
+}
