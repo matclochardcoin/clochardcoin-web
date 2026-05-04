@@ -1,3 +1,7 @@
+const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const COMMANDS_TABLE = "mat_commands";
+
 const fallbackConfig = {
   date: "",
   dailyObjective: "",
@@ -37,6 +41,8 @@ const logSchedule = [
 let config = fallbackConfig;
 let audioEnabled = false;
 let logInterval = null;
+let communityInterval = null;
+let lastCommunityCommandId = null;
 
 const el = {
   dailyObjective: document.getElementById("dailyObjective"),
@@ -111,7 +117,8 @@ function applyConfig() {
   el.instagramLink.href = config.socialLinks.instagram || "#";
   el.telegramLink.href = config.socialLinks.telegram || "#";
   el.tiktokLink.href = config.socialLinks.tiktok || "#";
-  el.terminalLink.href = config.socialLinks.terminal || "https://terminal.clochardcoin.it";
+  el.terminalLink.href =
+    config.socialLinks.terminal || "https://terminal.clochardcoin.it";
 
   el.donateBtn.textContent = `Dona ${config.minimumDonation}`;
 }
@@ -120,36 +127,48 @@ function startTerminal() {
   el.terminal.innerHTML = "";
 
   if (logInterval) clearInterval(logInterval);
+  if (communityInterval) clearInterval(communityInterval);
 
   const hasMission = clean(config.dailyObjective).length > 0;
-  const hasLogs = Object.values(config.logs || {}).some(log => clean(log.text).length > 0);
+  const hasLogs = Object.values(config.logs || {}).some((log) => clean(log.text).length > 0);
 
   if (!hasMission && !hasLogs) {
     typeLine(nowLabel(), "STANDBY", "In attesa dell'input serale da Termux.");
-    return;
+  } else {
+    typeLine(
+      nowLabel(),
+      "STANDBY",
+      "Mat è online. I log appariranno solo agli orari programmati: 06, 09, 12, 15, 18, 20."
+    );
+
+    setTimeout(() => {
+      const next = getNextLog();
+
+      if (next) {
+        typeLine(nowLabel(), "WAIT", `Prossimo log programmato: ${next.label}.`);
+      } else {
+        typeLine(
+          nowLabel(),
+          "WAIT",
+          "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00."
+        );
+      }
+    }, 1500);
+
+    checkScheduledLog();
+
+    logInterval = setInterval(() => {
+      checkScheduledLog();
+    }, 20000);
   }
 
-  typeLine(
-    nowLabel(),
-    "STANDBY",
-    "Mat è online. I log appariranno solo agli orari programmati: 06, 09, 12, 15, 18, 20."
-  );
-
   setTimeout(() => {
-    const next = getNextLog();
+    printCommunitySignal();
+  }, 5000);
 
-    if (next) {
-      typeLine(nowLabel(), "WAIT", `Prossimo log programmato: ${next.label}.`);
-    } else {
-      typeLine(nowLabel(), "WAIT", "I log di oggi sono terminati. Prossimo ciclo: domani alle 06:00.");
-    }
-  }, 1500);
-
-  checkScheduledLog();
-
-  logInterval = setInterval(() => {
-    checkScheduledLog();
-  }, 20000);
+  communityInterval = setInterval(() => {
+    printCommunitySignal();
+  }, 3 * 60 * 1000);
 }
 
 function checkScheduledLog() {
@@ -157,7 +176,7 @@ function checkScheduledLog() {
   const hour = now.getHours();
   const minute = now.getMinutes();
 
-  const item = logSchedule.find(log => log.hour === hour);
+  const item = logSchedule.find((log) => log.hour === hour);
 
   if (!item) return;
 
@@ -187,7 +206,7 @@ function getNextLog() {
   const hour = now.getHours();
   const minute = now.getMinutes();
 
-  return logSchedule.find(item => {
+  return logSchedule.find((item) => {
     if (hour < item.hour) return true;
     if (hour === item.hour && minute <= 4) return true;
     return false;
@@ -210,6 +229,62 @@ function printSelectedCommand() {
 
   setTimeout(() => {
     typeLine("09:02", "MAT", "Lo userò come traccia della missione di oggi.");
+  }, 1800);
+}async function fetchCommunityCommands() {
+  try {
+    const query =
+      `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}` +
+      `?select=id,nickname,command,created_at,status` +
+      `&status=eq.pending` +
+      `&order=created_at.desc` +
+      `&limit=5`;
+
+    const response = await fetch(query, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    if (!response.ok) {
+      console.warn("Supabase read non disponibile:", await response.text());
+      return [];
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn("Comandi community non disponibili:", error);
+    return [];
+  }
+}
+
+async function printCommunitySignal() {
+  const commands = await fetchCommunityCommands();
+
+  if (!commands.length) return;
+
+  const freshCommands = commands.filter((item) => item.id !== lastCommunityCommandId);
+  const pool = freshCommands.length ? freshCommands : commands;
+  const item = pool[Math.floor(Math.random() * pool.length)];
+
+  if (!item || !clean(item.command)) return;
+
+  lastCommunityCommandId = item.id;
+
+  const nickname = clean(item.nickname) || "utente_anonimo";
+
+  typeLine(
+    nowLabel(),
+    "USER_SIGNAL",
+    `@${nickname}: ${item.command}`
+  );
+
+  setTimeout(() => {
+    typeLine(
+      nowLabel(),
+      "MAT",
+      "Segnale ricevuto. Potrebbe diventare parte del prossimo log."
+    );
   }, 1800);
 }
 
@@ -268,7 +343,7 @@ function clean(value) {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function escapeHtml(value) {
