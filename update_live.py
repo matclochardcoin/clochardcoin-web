@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 CONFIG_PATH = Path("live/live-config.json")
+ARCHIVE_DIR = Path("live/archive")
 
 SOLANA_WALLET = "5sc1W9g5VVyBW9EhU5oYhhDF49K751mKjZWo92iemTji"
 
@@ -18,9 +19,7 @@ SOCIAL_LINKS = {
 
 def ask(prompt, default=""):
     value = input(f"{prompt} ")
-    if value.strip() == "":
-        return default
-    return value.strip()
+    return default if value.strip() == "" else value.strip()
 
 
 def ask_int(prompt, default):
@@ -35,6 +34,32 @@ def ask_int(prompt, default):
         return default
 
 
+def archive_current_config():
+    if not CONFIG_PATH.exists():
+        return
+
+    try:
+        with CONFIG_PATH.open("r", encoding="utf-8") as file:
+            old_config = json.load(file)
+
+        old_date = old_config.get("date")
+
+        if not old_date:
+            print("⚠️ Archivio saltato: il vecchio file non ha una data.")
+            return
+
+        ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+        archive_path = ARCHIVE_DIR / f"{old_date}.json"
+
+        with archive_path.open("w", encoding="utf-8") as file:
+            json.dump(old_config, file, ensure_ascii=False, indent=2)
+
+        print(f"📦 Archivio salvato: {archive_path}")
+
+    except Exception as error:
+        print(f"⚠️ Archivio non salvato: {error}")
+
+
 def generate_logs(objective, command):
     if command:
         command_line = f"Mat legge un comando selezionato dalla community: “{command}”."
@@ -44,61 +69,40 @@ def generate_logs(objective, command):
     return {
         "06": {
             "category": "BOOT",
-            "text": (
-                f"Mat si accende. Obiettivo caricato: {objective}. "
-                "La giornata inizia dal terminale."
-            )
+            "text": f"Mat si accende. Obiettivo caricato: {objective}. La giornata inizia dal terminale."
         },
         "09": {
             "category": "USER_SIGNAL",
-            "text": (
-                f"{command_line} "
-                "Il segnale viene trasformato in direzione operativa."
-            )
+            "text": f"{command_line} Il segnale viene trasformato in direzione operativa."
         },
         "12": {
             "category": "SCAN",
-            "text": (
-                f"Check centrale. Mat analizza i primi segnali collegati all'obiettivo: {objective}. "
-                "La missione continua."
-            )
+            "text": f"Check centrale. Mat analizza i primi segnali collegati all'obiettivo: {objective}. La missione continua."
         },
         "15": {
             "category": "RESULT",
-            "text": (
-                "Mat organizza ciò che ha raccolto. "
-                "I dati diventano tracce, le tracce diventano contenuto."
-            )
+            "text": "Mat organizza ciò che ha raccolto. I dati diventano tracce, le tracce diventano contenuto."
         },
         "18": {
             "category": "MAT",
-            "text": (
-                "Ultimo log operativo. Mat chiude il lavoro della giornata "
-                "e prepara il report finale."
-            )
+            "text": "Ultimo log operativo. Mat chiude il lavoro della giornata e prepara il report finale."
         },
         "20": {
             "category": "REPORT",
-            "text": (
-                f"Riassunto della giornata: Mat ha lavorato sull'obiettivo “{objective}”. "
-                "Il percorso continua domani con un nuovo input."
-            )
+            "text": f"Riassunto della giornata: Mat ha lavorato sull'obiettivo “{objective}”. Il percorso continua domani con un nuovo input."
         }
     }
 
 
 def run_git_commands(date):
     try:
-        subprocess.run(["git", "add", "live/live-config.json"], check=True)
-        subprocess.run(
-            ["git", "commit", "-m", f"Update Mat live config {date}"],
-            check=True
-        )
+        subprocess.run(["git", "add", "live/live-config.json", "live/archive", "update_live.py"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Update Mat live config {date}"], check=True)
         subprocess.run(["git", "push"], check=True)
-        print("\n✅ Configurazione inviata su GitHub.")
+        print("\n✅ Configurazione e archivio inviati su GitHub.")
     except subprocess.CalledProcessError:
         print("\n⚠️ File aggiornato, ma git push non completato.")
-        print("Probabilmente devi fare login GitHub con token.")
+        print("Controlla token GitHub o fai push manuale.")
 
 
 def main():
@@ -119,14 +123,14 @@ def main():
     instagram = ask_int("\nFollower Instagram", 142)
     telegram = ask_int("Utenti Telegram", 7)
     tiktok = ask_int("Follower TikTok", 2)
-
     youtube = ask("Stato YouTube [non ancora attivo]:", "non ancora attivo")
-
     command = ask("\nComando community selezionato opzionale:", "")
 
     selected_commands = []
     if command:
         selected_commands.append(command)
+
+    archive_current_config()
 
     config = {
         "date": date,
