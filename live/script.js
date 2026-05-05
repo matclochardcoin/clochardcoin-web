@@ -1,13 +1,15 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+
+const CONFIG_TABLE = "mat_live_config";
 const COMMANDS_TABLE = "mat_commands";
+const CONFIG_ID = 1;
 
 const fallbackConfig = {
-  date: "",
-  dailyObjective: "",
-  instagramFollowers: 142,
-  telegramUsers: 7,
-  tiktokFollowers: 2,
+  dailyObjective: "In attesa dell'obiettivo del giorno",
+  instagramFollowers: 0,
+  telegramUsers: 0,
+  tiktokFollowers: 0,
   youtubeStatus: "non ancora attivo",
   solanaWallet: "5sc1W9g5VVyBW9EhU5oYhhDF49K751mKjZWo92iemTji",
   minimumDonation: "0.01 SOL",
@@ -18,23 +20,23 @@ const fallbackConfig = {
     terminal: "https://terminal.clochardcoin.it",
     live: "https://live.clochardcoin.it"
   },
-  selectedCommands: [],
   logs: {
-    "06": { category: "BOOT", text: "" },
-    "09": { category: "USER_SIGNAL", text: "" },
-    "12": { category: "SCAN", text: "" },
-    "15": { category: "RESULT", text: "" },
-    "18": { category: "MAT", text: "" },
-    "20": { category: "REPORT", text: "" }
+    "06": "",
+    "09": "",
+    "12": "",
+    "15": "",
+    "18": "",
+    "20": ""
   }
 };
 
 let config = structuredClone(fallbackConfig);
 let audioEnabled = false;
-let communityInterval = null;
 let terminalQueue = Promise.resolve();
-let shownGeneratedLogs = 0;
-let generatedLogsInterval = null;
+let communityInterval = null;
+let liveSignalInterval = null;
+let configInterval = null;
+let lastPrintedLogKey = "";
 let lastCommunityCommandId = null;
 
 const $ = (id) => document.getElementById(id);
@@ -68,48 +70,92 @@ function init() {
 
   setupButtons();
   setupMatFallback();
-  loadConfig();
+  startLive();
 }
 
-async function loadConfig() {
-  try {
-    const response = await fetch(`./live-config.json?nocache=${Date.now()}`, {
-      cache: "no-store"
-    });
-
-    if (!response.ok) throw new Error("Config non disponibile");
-
-    const external = await response.json();
-    config = mergeConfig(fallbackConfig, external);
-  } catch (error) {
-    console.warn("Uso fallback:", error);
-    config = structuredClone(fallbackConfig);
-  }
-
-  applyConfig();
-  startTerminal();
-}
-
-function mergeConfig(base, external = {}) {
+function supabaseHeaders() {
   return {
-    ...structuredClone(base),
-    ...external,
-    socialLinks: {
-      ...base.socialLinks,
-      ...(external.socialLinks || {})
-    },
-    logs: {
-      ...base.logs,
-      ...(external.logs || {})
-    },
-    selectedCommands: Array.isArray(external.selectedCommands)
-      ? external.selectedCommands
-      : []
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    "Content-Type": "application/json"
   };
 }
 
+async function startLive() {
+  if (el.terminal) el.terminal.innerHTML = "";
+
+  typeLine(nowLabel(), "BOOT", "CLOCHARDCOIN LIVE TERMINAL ONLINE.");
+  typeLine(nowLabel(), "SIGNAL", "Segnale h24 attivo. Mat resta in ascolto.");
+
+  await loadConfigFromSupabase();
+  applyConfig();
+  printScheduledLog();
+
+  clearInterval(configInterval);
+  clearInterval(liveSignalInterval);
+  clearInterval(communityInterval);
+
+  configInterval = setInterval(async () => {
+    await loadConfigFromSupabase();
+    applyConfig();
+    printScheduledLog();
+  }, 10000);
+
+  liveSignalInterval = setInterval(() => {
+    const signals = [
+      "Segnale h24 stabile.",
+      "Mat monitora la strada digitale.",
+      "Terminale vivo. In attesa del prossimo log programmato.",
+      "Connessione community attiva.",
+      "ClochardCoin live pulse confermato."
+    ];
+
+    const msg = signals[Math.floor(Math.random() * signals.length)];
+    typeLine(nowLabel(), "LIVE", msg);
+  }, 60000);
+
+  communityInterval = setInterval(printCommunitySignal, 15000);
+
+  printCommunitySignal();
+}
+
+async function loadConfigFromSupabase() {
+  try {
+    const url =
+      `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}` +
+      `?select=*` +
+      `&id=eq.${CONFIG_ID}` +
+      `&limit=1`;
+
+    const response = await fetch(url, {
+      headers: supabaseHeaders(),
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const rows = await response.json();
+    const data = rows[0];
+
+    if (!data) return;
+
+    config = {
+      ...structuredClone(fallbackConfig),
+      dailyObjective: data.daily_objective || fallbackConfig.dailyObjective,
+      instagramFollowers: data.instagram_followers ?? 0,
+      telegramUsers: data.telegram_followers ?? 0,
+      tiktokFollowers: data.tiktok_followers ?? 0,
+      logs: data.scheduled_logs || fallbackConfig.logs
+    };
+  } catch (error) {
+    console.warn("Errore config Supabase:", error);
+  }
+}
+
 function applyConfig() {
-  setText(el.dailyObjective, clean(config.dailyObjective) || "In attesa dell'input serale da Termux");
+  setText(el.dailyObjective, config.dailyObjective);
   setText(el.instagramFollowers, config.instagramFollowers);
   setText(el.telegramUsers, config.telegramUsers);
   setText(el.tiktokFollowers, config.tiktokFollowers);
@@ -120,80 +166,56 @@ function applyConfig() {
   setHref(el.instagramLink, config.socialLinks.instagram);
   setHref(el.telegramLink, config.socialLinks.telegram);
   setHref(el.tiktokLink, config.socialLinks.tiktok);
-  setHref(el.terminalLink, config.socialLinks.terminal || "https://terminal.clochardcoin.it");
+  setHref(el.terminalLink, config.socialLinks.terminal);
 
   if (el.donateBtn) {
     el.donateBtn.textContent = `Dona ${config.minimumDonation}`;
   }
+
+  renderArchivePlaceholder();
 }
 
-function startTerminal() {
-  if (!el.terminal) return;
+function getCurrentLogHour() {
+  const hour = new Date().getHours();
 
-  el.terminal.innerHTML = "";
-  terminalQueue = Promise.resolve();
+  if (hour >= 20) return "20";
+  if (hour >= 18) return "18";
+  if (hour >= 15) return "15";
+  if (hour >= 12) return "12";
+  if (hour >= 9) return "09";
+  if (hour >= 6) return "06";
 
-  clearInterval(communityInterval);
-  clearInterval(generatedLogsInterval);
-
-  typeLine(nowLabel(), "BOOT", "CLOCHARDCOIN LIVE TERMINAL ONLINE.");
-  typeLine(nowLabel(), "MAT_AI", "Connessione ai log generati da Termux...");
-
-  loadGeneratedLogs();
-  generatedLogsInterval = setInterval(loadGeneratedLogs, 10000);
-
-  setTimeout(printCommunitySignal, 9000);
-  communityInterval = setInterval(printCommunitySignal, 3 * 60 * 1000);
-
-  loadArchiveIndex();
+  return null;
 }
 
-async function loadGeneratedLogs() {
-  try {
-    const response = await fetch(`../logs.json?nocache=${Date.now()}`, {
-      cache: "no-store"
-    });
+function getLogCategory(hour) {
+  const categories = {
+    "06": "BOOT",
+    "09": "USER_SIGNAL",
+    "12": "SCAN",
+    "15": "RESULT",
+    "18": "MAT",
+    "20": "REPORT"
+  };
 
-    if (!response.ok) {
-      typeLine(nowLabel(), "WAIT", "logs.json non ancora disponibile.");
-      return;
-    }
+  return categories[hour] || "MAT";
+}
 
-    const logs = await response.json();
+function printScheduledLog() {
+  const hour = getCurrentLogHour();
+  if (!hour) return;
 
-    if (!Array.isArray(logs)) return;
+  const text = clean(config.logs?.[hour]);
+  if (!text) return;
 
-    for (let i = shownGeneratedLogs; i < logs.length; i++) {
-      const log = logs[i];
+  const today = new Date().toISOString().slice(0, 10);
+  const logKey = `${today}-${hour}-${text}`;
 
-      if (!log || !clean(log.message)) continue;
+  if (logKey === lastPrintedLogKey) return;
 
-      if (clean(log.objective)) {
-        setText(el.dailyObjective, log.objective);
-      }
+  lastPrintedLogKey = logKey;
 
-      const label = `${String(log.hour).padStart(2, "0")}:00`;
-      const category = Number(log.hour) === 20 ? "REPORT" : "MAT";
-
-      typeLine(label, category, log.message);
-
-      shownGeneratedLogs++;
-    }
-
-    if (logs.length === shownGeneratedLogs) {
-      const idleMessages = [
-        "Monitoraggio segnali community...",
-        "Sincronizzazione narrativa in corso...",
-        "Mat resta online in attesa del prossimo log.",
-        "Analisi presenza digitale attiva..."
-      ];
-
-      const msg = idleMessages[Math.floor(Math.random() * idleMessages.length)];
-      typeLine(nowLabel(), "LIVE", msg);
-    }
-  } catch (error) {
-    console.warn("Errore lettura logs.json:", error);
-  }
+  typeLine(`${hour}:00`, getLogCategory(hour), text);
 }
 
 async function fetchCommunityCommands() {
@@ -206,31 +228,27 @@ async function fetchCommunityCommands() {
       `&limit=5`;
 
     const response = await fetch(query, {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      }
+      headers: supabaseHeaders(),
+      cache: "no-store"
     });
 
     if (!response.ok) {
-      console.warn("Supabase read non disponibile:", await response.text());
-      return [];
+      throw new Error(await response.text());
     }
 
     return await response.json();
   } catch (error) {
-    console.warn("Comandi community non disponibili:", error);
+    console.warn("Errore comandi community:", error);
     return [];
   }
 }
 
 async function printCommunitySignal() {
   const commands = await fetchCommunityCommands();
-
   if (!commands.length) return;
 
-  const freshCommands = commands.filter((item) => item.id !== lastCommunityCommandId);
-  const pool = freshCommands.length ? freshCommands : commands;
+  const fresh = commands.filter((item) => item.id !== lastCommunityCommandId);
+  const pool = fresh.length ? fresh : commands;
   const item = pool[Math.floor(Math.random() * pool.length)];
 
   if (!item || !clean(item.command)) return;
@@ -240,97 +258,16 @@ async function printCommunitySignal() {
   const nickname = clean(item.nickname) || "utente_anonimo";
 
   typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
-  typeLine(nowLabel(), "MAT", "Segnale approvato. Potrebbe diventare parte del prossimo log.");
+  typeLine(nowLabel(), "MAT", "Comando approvato ricevuto. Segnale integrato nella live.");
 }
 
-async function loadArchiveIndex() {
+function renderArchivePlaceholder() {
   if (!el.archiveList) return;
 
-  const archiveDates = buildArchiveDates(20);
-  const archiveItems = [];
-
-  for (const date of archiveDates) {
-    try {
-      const response = await fetch(`./archive/${date}.json?nocache=${Date.now()}`, {
-        cache: "no-store"
-      });
-
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      if (!data || !data.date) continue;
-
-      archiveItems.push(data);
-    } catch {
-      continue;
-    }
-  }
-
-  renderArchive(archiveItems);
-}
-
-function buildArchiveDates(daysBack) {
-  const dates = [];
-  const today = new Date();
-
-  for (let i = 1; i <= daysBack; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    dates.push(date.toISOString().slice(0, 10));
-  }
-
-  return dates;
-}
-
-function renderArchive(items) {
-  if (!el.archiveList) return;
-
-  if (!items.length) {
-    el.archiveList.innerHTML = `
-      <div class="archive-empty">
-        Archivio in attesa dei primi salvataggi da Termux.
-      </div>
-    `;
-    return;
-  }
-
-  el.archiveList.innerHTML = "";
-
-  items.forEach((day) => {
-    const details = document.createElement("details");
-    details.className = "archive-day";
-
-    const logs = day.logs || {};
-
-    details.innerHTML = `
-      <summary>${escapeHtml(day.date || "giorno senza data")}</summary>
-
-      <div class="archive-day-content">
-        <p class="archive-objective">
-          ${escapeHtml(day.dailyObjective || "Obiettivo non disponibile")}
-        </p>
-
-        ${renderArchiveLog("06:00", logs["06"])}
-        ${renderArchiveLog("09:00", logs["09"])}
-        ${renderArchiveLog("12:00", logs["12"])}
-        ${renderArchiveLog("15:00", logs["15"])}
-        ${renderArchiveLog("18:00", logs["18"])}
-        ${renderArchiveLog("20:00", logs["20"])}
-      </div>
-    `;
-
-    el.archiveList.appendChild(details);
-  });
-}
-
-function renderArchiveLog(label, log) {
-  if (!log || !clean(log.text)) return "";
-
-  return `
-    <p class="archive-log">
-      <span>[${escapeHtml(label)}] [${escapeHtml(log.category || "MAT")}]</span>
-      ${escapeHtml(log.text)}
-    </p>
+  el.archiveList.innerHTML = `
+    <div class="archive-empty">
+      Archivio giornaliero in preparazione. I log attivi ora arrivano dal pannello moderatore.
+    </div>
   `;
 }
 
@@ -356,7 +293,7 @@ async function typeLineInternal(label, category, text) {
   for (let i = 0; i <= full.length; i++) {
     line.innerHTML = formatLine(full.slice(0, i));
     el.terminal.scrollTop = el.terminal.scrollHeight;
-    await sleep(18 + Math.random() * 26);
+    await sleep(14 + Math.random() * 20);
   }
 
   line.classList.remove("cursor");
@@ -390,7 +327,7 @@ function sleep(ms) {
 }
 
 function escapeHtml(value) {
-  return String(value)
+  return String(value || "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
