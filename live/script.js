@@ -18,9 +18,9 @@ const fallbackConfig = {
   socialLinks: {
     instagram: "https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr",
     telegram: "https://t.me/+2WX7IXU1CzBlNzc0",
-    tiktok: "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT ",
+    tiktok: "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT",
     terminal: "terminal: "https://www.clochardcoin.it/terminal/",
-    live: "https://live.clochardcoin.it"
+    live: "https://www.clochardcoin.it/live/"
   },
   logs: {
     "06": "",
