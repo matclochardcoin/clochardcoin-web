@@ -3,6 +3,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const CONFIG_TABLE = "mat_live_config";
 const COMMANDS_TABLE = "mat_commands";
+const ARCHIVE_TABLE = "mat_live_archive";
 const CONFIG_ID = 1;
 
 const fallbackConfig = {
@@ -36,6 +37,7 @@ let terminalQueue = Promise.resolve();
 let communityInterval = null;
 let liveSignalInterval = null;
 let configInterval = null;
+let archiveInterval = null;
 let lastPrintedLogKey = "";
 let lastCommunityCommandId = null;
 
@@ -90,10 +92,12 @@ async function startLive() {
   await loadConfigFromSupabase();
   applyConfig();
   printScheduledLog();
+  loadArchiveFromSupabase();
 
   clearInterval(configInterval);
   clearInterval(liveSignalInterval);
   clearInterval(communityInterval);
+  clearInterval(archiveInterval);
 
   configInterval = setInterval(async () => {
     await loadConfigFromSupabase();
@@ -115,6 +119,7 @@ async function startLive() {
   }, 60000);
 
   communityInterval = setInterval(printCommunitySignal, 15000);
+  archiveInterval = setInterval(loadArchiveFromSupabase, 60000);
 
   printCommunitySignal();
 }
@@ -171,8 +176,6 @@ function applyConfig() {
   if (el.donateBtn) {
     el.donateBtn.textContent = `Dona ${config.minimumDonation}`;
   }
-
-  renderArchivePlaceholder();
 }
 
 function getCurrentLogHour() {
@@ -261,14 +264,104 @@ async function printCommunitySignal() {
   typeLine(nowLabel(), "MAT", "Comando approvato ricevuto. Segnale integrato nella live.");
 }
 
-function renderArchivePlaceholder() {
+async function loadArchiveFromSupabase() {
   if (!el.archiveList) return;
 
-  el.archiveList.innerHTML = `
-    <div class="archive-empty">
-      Archivio giornaliero in preparazione. I log attivi ora arrivano dal pannello moderatore.
-    </div>
+  try {
+    const query =
+      `${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}` +
+      `?select=archive_date,daily_objective,instagram_followers,telegram_followers,tiktok_followers,scheduled_logs,created_at` +
+      `&order=archive_date.desc` +
+      `&limit=20`;
+
+    const response = await fetch(query, {
+      headers: supabaseHeaders(),
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const archiveItems = await response.json();
+    renderArchive(archiveItems);
+  } catch (error) {
+    console.warn("Errore archivio Supabase:", error);
+
+    el.archiveList.innerHTML = `
+      <div class="archive-empty">
+        Archivio non disponibile. Controlla la tabella mat_live_archive.
+      </div>
+    `;
+  }
+}
+
+function renderArchive(items) {
+  if (!el.archiveList) return;
+
+  if (!items.length) {
+    el.archiveList.innerHTML = `
+      <div class="archive-empty">
+        Archivio in attesa dei primi salvataggi dal pannello moderatore.
+      </div>
+    `;
+    return;
+  }
+
+  el.archiveList.innerHTML = "";
+
+  items.forEach((day) => {
+    const details = document.createElement("details");
+    details.className = "archive-day";
+
+    const logs = day.scheduled_logs || {};
+
+    details.innerHTML = `
+      <summary>${formatDateIt(day.archive_date)}</summary>
+
+      <div class="archive-day-content">
+        <p class="archive-objective">
+          ${escapeHtml(day.daily_objective || "Obiettivo non disponibile")}
+        </p>
+
+        <p class="archive-stats">
+          Instagram: ${escapeHtml(day.instagram_followers ?? 0)} ·
+          Telegram: ${escapeHtml(day.telegram_followers ?? 0)} ·
+          TikTok: ${escapeHtml(day.tiktok_followers ?? 0)}
+        </p>
+
+        ${renderArchiveLog("06:00", "BOOT", logs["06"])}
+        ${renderArchiveLog("09:00", "USER_SIGNAL", logs["09"])}
+        ${renderArchiveLog("12:00", "SCAN", logs["12"])}
+        ${renderArchiveLog("15:00", "RESULT", logs["15"])}
+        ${renderArchiveLog("18:00", "MAT", logs["18"])}
+        ${renderArchiveLog("20:00", "REPORT", logs["20"])}
+      </div>
+    `;
+
+    el.archiveList.appendChild(details);
+  });
+}
+
+function renderArchiveLog(label, category, text) {
+  if (!clean(text)) return "";
+
+  return `
+    <p class="archive-log">
+      <span>[${escapeHtml(label)}] [${escapeHtml(category)}]</span>
+      ${escapeHtml(text)}
+    </p>
   `;
+}
+
+function formatDateIt(value) {
+  if (!value) return "Giorno senza data";
+
+  const [year, month, day] = String(value).split("-");
+
+  if (!year || !month || !day) return escapeHtml(value);
+
+  return `${day}/${month}/${year}`;
 }
 
 function typeLine(label, category, text) {
