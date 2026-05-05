@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>ClochardCoin | Mat Clochard</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255, 180, 0, 0.18), transparent 35%),
+        radial-gradient(circle at bottom, rgba(160, 0, 0, 0.28), transparent 40%),
+        #050505;
+      color: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 460px;
+      border: 1px solid rgba(255, 190, 0, 0.35);
+      background: rgba(10, 10, 10, 0.88);
+      border-radius: 24px;
+      padding: 28px 22px;
+      box-shadow: 0 0 40px rgba(255, 0, 0, 0.18);
+    }
+
+    .logo {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ffcc33;
+      background: #111;
+    }
+
+    .tag {
+      color: #ffcc33;
+      letter-spacing: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1;
+      color: #fff;
+    }
+
+    h1 span {
+      color: #e32222;
+    }
+
+    .subtitle {
+      margin: 14px 0 26px;
+      color: #cfcfcf;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+
+    .terminal-line {
+      text-align: left;
+      background: #090909;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 22px;
+      color: #d8d8d8;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .terminal-line strong {
+      color: #ffcc33;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      margin: 12px 0;
+      border-radius: 16px;
+      text-decoration: none;
+      font-weight: 800;
+      color: #050505;
+      background: #ffcc33;
+      border: 1px solid #ffcc33;
+    }
+
+    .btn.secondary {
+      color: #fff;
+      background: transparent;
+      border-color: rgba(255,255,255,0.28);
+    }
+
+    .btn.danger {
+      color: #ffcc33;
+      background: rgba(227,34,34,0.12);
+      border-color: rgba(227,34,34,0.55);
+    }
+
+    .footer {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <img class="logo" src="./assets/mat.png" alt="Mat Clochard" />
+
+    <div class="tag">CLOCHARDCOIN // LIVE SYSTEM</div>
+
+    <h1>MAT <span>CLOCHARD</span></h1>
+
+    <p class="subtitle">
+      Il primo clochard digitale del Web3.  
+      Vive nella live, riceve segnali dalla community e trasforma i comandi in log.
+    </p>
+
+    <div class="terminal-line">
+      <strong>[BOOT]</strong> Sistema attivo.<br>
+      <strong>[LIVE]</strong> Mat è online h24.<br>
+      <strong>[USER]</strong> Puoi lasciare un comando.
+    </div>
+
+    <a class="btn" href="./live/">ENTRA NELLA LIVE</a>
+    <a class="btn secondary" href="./terminal/">DAI UN COMANDO A MAT</a>
+    <a class="btn danger" href="./terminal/moderatore.html">AREA MODERATORE</a>
+
+    <div class="footer">
+      ClochardCoin · moneta di identità
+    </div>
+  </main>
+</body>
+</html>
