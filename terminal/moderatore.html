@@ -15,27 +15,67 @@
     <header class="hero">
       <p class="domain">terminal.clochardcoin.it/moderatore</p>
       <h1>MODERATORE MAT</h1>
-      <p class="subtitle">Approva o blocca i comandi prima che entrino nella live.</p>
+      <p class="subtitle">Gestisci la live, programma i log e modera i comandi della community.</p>
     </header>
 
     <section class="terminal-card">
       <div class="terminal-top">
         <div class="dots"><span></span><span></span><span></span></div>
-        <p>/mat_clochard/moderation_panel</p>
+        <p>/mat_clochard/control_panel</p>
       </div>
 
       <div class="command-form" id="loginBox">
         <label for="adminPassword">Password moderatore</label>
         <input id="adminPassword" type="password" placeholder="Inserisci password" />
-
         <button id="loginBtn" type="button">Entra</button>
 
         <p class="local-note">
-          Pannello riservato alla gestione dei comandi inviati dalla community.
+          Pannello riservato alla gestione della live ClochardCoin.
         </p>
       </div>
 
       <div class="command-form hidden" id="moderationBox">
+
+        <h2>Config live</h2>
+
+        <label for="dailyObjective">Obiettivo del giorno</label>
+        <input id="dailyObjective" type="text" placeholder="Es. Continuare a costruire" />
+
+        <label for="instagramFollowers">Follower Instagram</label>
+        <input id="instagramFollowers" type="number" placeholder="141" />
+
+        <label for="telegramFollowers">Follower Telegram</label>
+        <input id="telegramFollowers" type="number" placeholder="7" />
+
+        <label for="tiktokFollowers">Follower TikTok</label>
+        <input id="tiktokFollowers" type="number" placeholder="3" />
+
+        <h2>Log programmati</h2>
+
+        <label for="log06">Log ore 06</label>
+        <textarea id="log06" rows="3" placeholder="Testo log ore 06"></textarea>
+
+        <label for="log09">Log ore 09</label>
+        <textarea id="log09" rows="3" placeholder="Testo log ore 09"></textarea>
+
+        <label for="log12">Log ore 12</label>
+        <textarea id="log12" rows="3" placeholder="Testo log ore 12"></textarea>
+
+        <label for="log15">Log ore 15</label>
+        <textarea id="log15" rows="3" placeholder="Testo log ore 15"></textarea>
+
+        <label for="log18">Log ore 18</label>
+        <textarea id="log18" rows="3" placeholder="Testo log ore 18"></textarea>
+
+        <label for="log20">Log ore 20</label>
+        <textarea id="log20" rows="3" placeholder="Testo log ore 20"></textarea>
+
+        <button id="saveLiveConfigBtn" type="button">Salva configurazione live</button>
+
+        <hr />
+
+        <h2>Comandi utenti</h2>
+
         <button id="refreshBtn" type="button">Aggiorna comandi</button>
         <button id="logoutBtn" type="button">Esci</button>
 
@@ -51,6 +91,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./moderatore.js?v=2"></script>
+  <script src="./moderatore.js?v=3"></script>
 </body>
 </html>
