@@ -24,7 +24,6 @@
         <p>/mat_clochard/control_panel</p>
       </div>
 
-      <!-- LOGIN -->
       <div class="command-form" id="loginBox">
         <label for="adminPassword">Password moderatore</label>
         <input id="adminPassword" type="password" placeholder="Inserisci password" />
@@ -35,10 +34,11 @@
         </p>
       </div>
 
-      <!-- PANEL -->
       <div class="command-form hidden" id="moderationBox">
-
         <h2>Config live</h2>
+
+        <label for="liveDate">Data live programmata</label>
+        <input id="liveDate" type="date" />
 
         <label for="dailyObjective">Obiettivo del giorno</label>
         <input id="dailyObjective" type="text" placeholder="Es. Continuare a costruire" />
@@ -72,7 +72,6 @@
         <label for="log20">Log ore 20</label>
         <textarea id="log20" rows="3"></textarea>
 
-        <!-- BOTTONI -->
         <button id="saveLiveConfigBtn" type="button">
           Salva configurazione live
         </button>
@@ -100,6 +99,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./moderatore.js?v=4"></script>
+  <script src="./moderatore.js?v=5"></script>
 </body>
 </html>
