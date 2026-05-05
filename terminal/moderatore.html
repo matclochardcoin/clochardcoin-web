@@ -24,6 +24,7 @@
         <p>/mat_clochard/control_panel</p>
       </div>
 
+      <!-- LOGIN -->
       <div class="command-form" id="loginBox">
         <label for="adminPassword">Password moderatore</label>
         <input id="adminPassword" type="password" placeholder="Inserisci password" />
@@ -34,6 +35,7 @@
         </p>
       </div>
 
+      <!-- PANEL -->
       <div class="command-form hidden" id="moderationBox">
 
         <h2>Config live</h2>
@@ -53,24 +55,31 @@
         <h2>Log programmati</h2>
 
         <label for="log06">Log ore 06</label>
-        <textarea id="log06" rows="3" placeholder="Testo log ore 06"></textarea>
+        <textarea id="log06" rows="3"></textarea>
 
         <label for="log09">Log ore 09</label>
-        <textarea id="log09" rows="3" placeholder="Testo log ore 09"></textarea>
+        <textarea id="log09" rows="3"></textarea>
 
         <label for="log12">Log ore 12</label>
-        <textarea id="log12" rows="3" placeholder="Testo log ore 12"></textarea>
+        <textarea id="log12" rows="3"></textarea>
 
         <label for="log15">Log ore 15</label>
-        <textarea id="log15" rows="3" placeholder="Testo log ore 15"></textarea>
+        <textarea id="log15" rows="3"></textarea>
 
         <label for="log18">Log ore 18</label>
-        <textarea id="log18" rows="3" placeholder="Testo log ore 18"></textarea>
+        <textarea id="log18" rows="3"></textarea>
 
         <label for="log20">Log ore 20</label>
-        <textarea id="log20" rows="3" placeholder="Testo log ore 20"></textarea>
+        <textarea id="log20" rows="3"></textarea>
 
-        <button id="saveLiveConfigBtn" type="button">Salva configurazione live</button>
+        <!-- BOTTONI -->
+        <button id="saveLiveConfigBtn" type="button">
+          Salva configurazione live
+        </button>
+
+        <button id="saveArchiveBtn" type="button" style="margin-top:10px;background:#e6b800;color:black;">
+          Salva giornata in archivio
+        </button>
 
         <hr />
 
@@ -91,6 +100,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./moderatore.js?v=3"></script>
+  <script src="./moderatore.js?v=4"></script>
 </body>
 </html>
