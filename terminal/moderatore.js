@@ -3,6 +3,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const COMMANDS_TABLE = "mat_commands";
 const CONFIG_TABLE = "mat_live_config";
+const ARCHIVE_TABLE = "mat_live_archive";
 const CONFIG_ID = 1;
 const ADMIN_PASSWORD = "MAT2026";
 
@@ -13,6 +14,7 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const refreshBtn = document.getElementById("refreshBtn");
 const saveLiveConfigBtn = document.getElementById("saveLiveConfigBtn");
+const saveArchiveBtn = document.getElementById("saveArchiveBtn");
 const moderationList = document.getElementById("moderationList");
 const toast = document.getElementById("toast");
 
@@ -49,6 +51,21 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getScheduledLogsPayload() {
+  return {
+    "06": log06.value.trim(),
+    "09": log09.value.trim(),
+    "12": log12.value.trim(),
+    "15": log15.value.trim(),
+    "18": log18.value.trim(),
+    "20": log20.value.trim()
+  };
 }
 
 function supabaseHeaders(extra = {}) {
@@ -122,14 +139,7 @@ async function saveLiveConfig() {
     instagram_followers: Number(instagramFollowers.value || 0),
     telegram_followers: Number(telegramFollowers.value || 0),
     tiktok_followers: Number(tiktokFollowers.value || 0),
-    scheduled_logs: {
-      "06": log06.value.trim(),
-      "09": log09.value.trim(),
-      "12": log12.value.trim(),
-      "15": log15.value.trim(),
-      "18": log18.value.trim(),
-      "20": log20.value.trim()
-    },
+    scheduled_logs: getScheduledLogsPayload(),
     signal_status: "LIVE",
     updated_at: new Date().toISOString()
   };
@@ -151,6 +161,38 @@ async function saveLiveConfig() {
   } catch (error) {
     console.error(error);
     showToast("Errore salvataggio config. Controlla tabella e policy Supabase.");
+  }
+}
+
+async function saveArchive() {
+  const date = todayIsoDate();
+
+  const payload = {
+    archive_date: date,
+    daily_objective: dailyObjective.value.trim(),
+    instagram_followers: Number(instagramFollowers.value || 0),
+    telegram_followers: Number(telegramFollowers.value || 0),
+    tiktok_followers: Number(tiktokFollowers.value || 0),
+    scheduled_logs: getScheduledLogsPayload()
+  };
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}`, {
+      method: "POST",
+      headers: supabaseHeaders({
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      }),
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    showToast(`Giornata ${date} salvata in archivio.`);
+  } catch (error) {
+    console.error(error);
+    showToast("Errore salvataggio archivio. Controlla tabella mat_live_archive.");
   }
 }
 
@@ -269,6 +311,10 @@ logoutBtn.addEventListener("click", () => {
 
 refreshBtn.addEventListener("click", loadCommands);
 saveLiveConfigBtn.addEventListener("click", saveLiveConfig);
+
+if (saveArchiveBtn) {
+  saveArchiveBtn.addEventListener("click", saveArchive);
+}
 
 moderationList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
