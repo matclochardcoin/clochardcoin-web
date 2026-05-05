@@ -18,6 +18,7 @@ const saveArchiveBtn = document.getElementById("saveArchiveBtn");
 const moderationList = document.getElementById("moderationList");
 const toast = document.getElementById("toast");
 
+const liveDate = document.getElementById("liveDate");
 const dailyObjective = document.getElementById("dailyObjective");
 const instagramFollowers = document.getElementById("instagramFollowers");
 const telegramFollowers = document.getElementById("telegramFollowers");
@@ -55,6 +56,10 @@ function escapeHtml(value) {
 
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function getSelectedLiveDate() {
+  return liveDate.value || todayIsoDate();
 }
 
 function getScheduledLogsPayload() {
@@ -109,10 +114,12 @@ async function loadLiveConfig() {
     const config = data[0];
 
     if (!config) {
+      liveDate.value = todayIsoDate();
       showToast("Config live non trovata. Verrà creata al primo salvataggio.");
       return;
     }
 
+    liveDate.value = config.live_date || todayIsoDate();
     dailyObjective.value = config.daily_objective || "";
     instagramFollowers.value = config.instagram_followers ?? "";
     telegramFollowers.value = config.telegram_followers ?? "";
@@ -133,8 +140,11 @@ async function loadLiveConfig() {
 }
 
 async function saveLiveConfig() {
+  const selectedDate = getSelectedLiveDate();
+
   const payload = {
     id: CONFIG_ID,
+    live_date: selectedDate,
     daily_objective: dailyObjective.value.trim(),
     instagram_followers: Number(instagramFollowers.value || 0),
     telegram_followers: Number(telegramFollowers.value || 0),
@@ -157,7 +167,7 @@ async function saveLiveConfig() {
       throw new Error(await response.text());
     }
 
-    showToast("Configurazione live salvata.");
+    showToast(`Config live salvata per il ${selectedDate}.`);
   } catch (error) {
     console.error(error);
     showToast("Errore salvataggio config. Controlla tabella e policy Supabase.");
@@ -165,10 +175,11 @@ async function saveLiveConfig() {
 }
 
 async function saveArchive() {
-  const date = todayIsoDate();
+  const selectedDate = getSelectedLiveDate();
 
   const payload = {
-    archive_date: date,
+    archive_date: selectedDate,
+    live_date: selectedDate,
     daily_objective: dailyObjective.value.trim(),
     instagram_followers: Number(instagramFollowers.value || 0),
     telegram_followers: Number(telegramFollowers.value || 0),
@@ -177,19 +188,22 @@ async function saveArchive() {
   };
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}`, {
-      method: "POST",
-      headers: supabaseHeaders({
-        Prefer: "resolution=merge-duplicates,return=minimal"
-      }),
-      body: JSON.stringify(payload)
-    });
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}?on_conflict=archive_date`,
+      {
+        method: "POST",
+        headers: supabaseHeaders({
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(payload)
+      }
+    );
 
     if (!response.ok) {
       throw new Error(await response.text());
     }
 
-    showToast(`Giornata ${date} salvata in archivio.`);
+    showToast(`Giornata ${selectedDate} salvata in archivio.`);
   } catch (error) {
     console.error(error);
     showToast("Errore salvataggio archivio. Controlla tabella mat_live_archive.");
