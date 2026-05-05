@@ -7,6 +7,7 @@ const ARCHIVE_TABLE = "mat_live_archive";
 const CONFIG_ID = 1;
 
 const fallbackConfig = {
+  liveDate: "",
   dailyObjective: "In attesa dell'obiettivo del giorno",
   instagramFollowers: 0,
   telegramUsers: 0,
@@ -38,7 +39,7 @@ let communityInterval = null;
 let liveSignalInterval = null;
 let configInterval = null;
 let archiveInterval = null;
-let lastPrintedLogKey = "";
+let printedLogKeys = new Set();
 let lastCommunityCommandId = null;
 
 const $ = (id) => document.getElementById(id);
@@ -91,7 +92,7 @@ async function startLive() {
 
   await loadConfigFromSupabase();
   applyConfig();
-  printScheduledLog();
+  printAvailableScheduledLogs();
   loadArchiveFromSupabase();
 
   clearInterval(configInterval);
@@ -102,7 +103,7 @@ async function startLive() {
   configInterval = setInterval(async () => {
     await loadConfigFromSupabase();
     applyConfig();
-    printScheduledLog();
+    printAvailableScheduledLogs();
   }, 10000);
 
   liveSignalInterval = setInterval(() => {
@@ -148,6 +149,7 @@ async function loadConfigFromSupabase() {
 
     config = {
       ...structuredClone(fallbackConfig),
+      liveDate: data.live_date || "",
       dailyObjective: data.daily_objective || fallbackConfig.dailyObjective,
       instagramFollowers: data.instagram_followers ?? 0,
       telegramUsers: data.telegram_followers ?? 0,
@@ -178,17 +180,17 @@ function applyConfig() {
   }
 }
 
-function getCurrentLogHour() {
-  const hour = new Date().getHours();
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
 
-  if (hour >= 20) return "20";
-  if (hour >= 18) return "18";
-  if (hour >= 15) return "15";
-  if (hour >= 12) return "12";
-  if (hour >= 9) return "09";
-  if (hour >= 6) return "06";
+function getCurrentMinutes() {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
 
-  return null;
+function logHourToMinutes(hour) {
+  return Number(hour) * 60;
 }
 
 function getLogCategory(hour) {
@@ -204,21 +206,41 @@ function getLogCategory(hour) {
   return categories[hour] || "MAT";
 }
 
-function printScheduledLog() {
-  const hour = getCurrentLogHour();
-  if (!hour) return;
+function printAvailableScheduledLogs() {
+  const liveDate = config.liveDate || todayIsoDate();
+  const today = todayIsoDate();
 
-  const text = clean(config.logs?.[hour]);
-  if (!text) return;
+  if (liveDate > today) {
+    const waitKey = `waiting-${liveDate}`;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const logKey = `${today}-${hour}-${text}`;
+    if (!printedLogKeys.has(waitKey)) {
+      printedLogKeys.add(waitKey);
+      typeLine(nowLabel(), "WAIT", `Log programmati per il ${formatDateIt(liveDate)}. Mat resta online in attesa.`);
+    }
 
-  if (logKey === lastPrintedLogKey) return;
+    return;
+  }
 
-  lastPrintedLogKey = logKey;
+  if (liveDate < today) {
+    return;
+  }
 
-  typeLine(`${hour}:00`, getLogCategory(hour), text);
+  const currentMinutes = getCurrentMinutes();
+  const hours = ["06", "09", "12", "15", "18", "20"];
+
+  hours.forEach((hour) => {
+    const text = clean(config.logs?.[hour]);
+
+    if (!text) return;
+    if (currentMinutes < logHourToMinutes(hour)) return;
+
+    const logKey = `${liveDate}-${hour}-${text}`;
+
+    if (printedLogKeys.has(logKey)) return;
+
+    printedLogKeys.add(logKey);
+    typeLine(`${hour}:00`, getLogCategory(hour), text);
+  });
 }
 
 async function fetchCommunityCommands() {
@@ -270,7 +292,7 @@ async function loadArchiveFromSupabase() {
   try {
     const query =
       `${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}` +
-      `?select=archive_date,daily_objective,instagram_followers,telegram_followers,tiktok_followers,scheduled_logs,created_at` +
+      `?select=archive_date,live_date,daily_objective,instagram_followers,telegram_followers,tiktok_followers,scheduled_logs,created_at` +
       `&order=archive_date.desc` +
       `&limit=20`;
 
@@ -315,9 +337,10 @@ function renderArchive(items) {
     details.className = "archive-day";
 
     const logs = day.scheduled_logs || {};
+    const date = day.live_date || day.archive_date;
 
     details.innerHTML = `
-      <summary>${formatDateIt(day.archive_date)}</summary>
+      <summary>${formatDateIt(date)}</summary>
 
       <div class="archive-day-content">
         <p class="archive-objective">
