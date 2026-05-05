@@ -17,8 +17,6 @@
 
   <main class="page">
     <header class="hero-header">
-      <p class="domain">live.clochardcoin.it</p>
-
       <h1>MAT CLOCHARD LIVE</h1>
 
       <p class="subtitle">
@@ -80,10 +78,7 @@
       </div>
     </section>
 
-    <section class="actions">
-      <button id="donateBtn" type="button">Dona 0.01 SOL</button>
-      <button id="copyWalletBtn" type="button">Copia wallet</button>
-
+    <section class="actions social-actions">
       <a id="instagramLink" href="#" target="_blank" rel="noopener">
         Instagram
       </a>
@@ -95,14 +90,18 @@
       <a id="tiktokLink" href="#" target="_blank" rel="noopener">
         TikTok
       </a>
-
-      <a id="terminalLink" href="https://terminal.clochardcoin.it" target="_blank" rel="noopener">
-        Dai un comando
-      </a>
     </section>
 
-    <section class="wallet-box">
-      <span>Wallet Solana di Mat</span>
+    <section class="wallet-box donation-focus">
+      <span>Supporta il cammino di Mat</span>
+
+      <h2>Ogni spicciolo tiene viva la live.</h2>
+
+      <p class="support-text">
+        Mat parte da zero: una missione, un terminale, una community.
+        Ogni donazione aiuta ClochardCoin a produrre contenuti, mantenere la live attiva
+        e far crescere il primo clochard digitale del Web3.
+      </p>
 
       <code id="solanaWallet">
         Caricamento...
@@ -113,24 +112,10 @@
         <b id="minimumDonation">0.01 SOL</b>
       </small>
 
-      <p class="support-text">
-        Ogni supporto aiuta Mat Clochard a continuare il percorso:
-        contenuti, live, community e sviluppo del progetto.
-      </p>
-    </section>
-
-    <section class="audio-panel">
-      <button id="toggleAudioBtn" type="button">
-        Attiva musica ambient
-      </button>
-
-      <small>
-        Atmosfera spaziale a volume basso. Il browser richiede un click per avviare l’audio.
-      </small>
-
-      <audio id="ambientAudio" loop>
-        <source src="../assets/ambient.mp3" type="audio/mpeg" />
-      </audio>
+      <div class="donation-actions">
+        <button id="donateBtn" type="button">Dona 0.01 SOL</button>
+        <button id="copyWalletBtn" type="button">Copia wallet</button>
+      </div>
     </section>
 
     <section class="terminal-section">
@@ -146,16 +131,13 @@
 
       <div id="terminal" class="terminal"></div>
 
-      <div class="terminal-footer">
-        <p>
-          Vuoi dare un comando a Mat?
-          Vai su <strong>terminal.clochardcoin.it</strong>.
-          I migliori comandi possono apparire nella live e nel report delle 20:00.
-        </p>
+      <div class="terminal-footer command-footer">
+        <a id="terminalLink" href="https://terminal.clochardcoin.it" target="_blank" rel="noopener">
+          IMMETTI UN COMANDO
+        </a>
       </div>
     </section>
 
-    <!-- 🔥 NUOVA SEZIONE ARCHIVIO -->
     <section class="archive-section">
       <div class="archive-header">
         <h2>ARCHIVIO LOG PRECEDENTI</h2>
@@ -166,7 +148,7 @@
 
       <div id="archiveList" class="archive-list">
         <div class="archive-empty">
-          Archivio in attesa dei primi salvataggi da Termux.
+          Archivio in attesa dei primi salvataggi dal pannello moderatore.
         </div>
       </div>
     </section>
@@ -196,8 +178,7 @@
         <summary>Privacy</summary>
 
         <p>
-          Questa prima versione della pagina live non raccoglie dati personali direttamente.
-          I comandi inviati dal terminale pubblico dovranno essere moderati prima dell’eventuale uso nella live.
+          I comandi inviati dal terminale pubblico vengono moderati prima dell’eventuale uso nella live.
         </p>
       </details>
 
@@ -213,9 +194,22 @@
     </section>
   </main>
 
+  <section class="audio-bar">
+    <button id="toggleAudioBtn" type="button">
+      Musica ambient
+    </button>
+
+    <small>
+      Atmosfera live a volume basso
+    </small>
+
+    <audio id="ambientAudio" loop>
+      <source src="../assets/ambient.mp3" type="audio/mpeg" />
+    </audio>
+  </section>
+
   <div id="toast" class="toast"></div>
 
-  <!-- 🔥 VERSIONE SCRIPT AGGIORNATA -->
-  <script src="./script.js?v=11"></script>
+  <script src="./script.js?v=12"></script>
 </body>
 </html>
