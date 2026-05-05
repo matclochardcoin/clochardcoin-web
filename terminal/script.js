@@ -2,11 +2,18 @@ const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
 const COMMANDS_TABLE = "mat_commands";
 
+const commandForm = document.getElementById("commandForm");
 const nicknameInput = document.getElementById("nickname");
 const commandInput = document.getElementById("command");
-const sendBtn = document.getElementById("sendBtn");
-const terminal = document.getElementById("terminal");
+const rulesAccepted = document.getElementById("rulesAccepted");
+const submitBtn = document.getElementById("submitBtn");
+const successBox = document.getElementById("successBox");
+const commandsList = document.getElementById("commandsList");
+const clearLocalBtn = document.getElementById("clearLocalBtn");
+const charCount = document.getElementById("charCount");
 const toast = document.getElementById("toast");
+
+const LOCAL_KEY = "mat-local-commands";
 
 function showToast(message) {
   if (!toast) {
@@ -31,15 +38,6 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function writeTerminal(text) {
-  if (!terminal) return;
-
-  const line = document.createElement("p");
-  line.innerHTML = escapeHtml(text);
-  terminal.appendChild(line);
-  terminal.scrollTop = terminal.scrollHeight;
-}
-
 function headers() {
   return {
     "Content-Type": "application/json",
@@ -49,17 +47,73 @@ function headers() {
   };
 }
 
-async function sendCommand() {
-  const nickname = nicknameInput?.value.trim() || "utente_anonimo";
-  const command = commandInput?.value.trim();
+function getLocalCommands() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalCommand(item) {
+  const commands = getLocalCommands();
+
+  commands.unshift(item);
+
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(commands.slice(0, 10)));
+
+  renderLocalCommands();
+}
+
+function renderLocalCommands() {
+  if (!commandsList) return;
+
+  const commands = getLocalCommands();
+
+  if (!commands.length) {
+    commandsList.innerHTML = `
+      <div class="command-item">
+        <strong>Nessun comando locale</strong>
+        <p>I comandi inviati da questo dispositivo appariranno qui.</p>
+      </div>
+    `;
+    return;
+  }
+
+  commandsList.innerHTML = "";
+
+  commands.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "command-item";
+
+    div.innerHTML = `
+      <strong>@${escapeHtml(item.nickname || "utente_anonimo")}</strong>
+      <p>${escapeHtml(item.command)}</p>
+      <small>${escapeHtml(item.created_at)} · stato: pending moderation</small>
+    `;
+
+    commandsList.appendChild(div);
+  });
+}
+
+async function sendCommand(event) {
+  event.preventDefault();
+
+  const nickname = nicknameInput.value.trim() || "utente_anonimo";
+  const command = commandInput.value.trim();
 
   if (!command) {
     showToast("Scrivi un comando per Mat.");
     return;
   }
 
-  sendBtn.disabled = true;
-  sendBtn.textContent = "Invio...";
+  if (!rulesAccepted.checked) {
+    showToast("Devi accettare le regole.");
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Invio...";
 
   try {
     const payload = {
@@ -78,40 +132,48 @@ async function sendCommand() {
       throw new Error(await response.text());
     }
 
-    writeTerminal(`> comando inviato da @${nickname}`);
-    writeTerminal(`> stato: pending moderation`);
-    writeTerminal(`> "${command}"`);
+    saveLocalCommand({
+      nickname,
+      command,
+      created_at: new Date().toLocaleString("it-IT")
+    });
 
-    commandInput.value = "";
+    commandForm.reset();
+
+    if (charCount) {
+      charCount.textContent = "0";
+    }
+
+    if (successBox) {
+      successBox.classList.remove("hidden");
+
+      setTimeout(() => {
+        successBox.classList.add("hidden");
+      }, 5000);
+    }
+
     showToast("Comando inviato. Attende moderazione.");
   } catch (error) {
     console.error(error);
     showToast("Errore invio comando. Controlla Supabase.");
-    writeTerminal("> errore: comando non inviato");
   } finally {
-    sendBtn.disabled = false;
-    sendBtn.textContent = "Invia comando";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Invia comando";
   }
 }
 
-function bootTerminal() {
-  if (!terminal) return;
-
-  terminal.innerHTML = "";
-  writeTerminal("CLOCHARDCOIN TERMINAL");
-  writeTerminal("MAT_AI // INPUT CHANNEL ONLINE");
-  writeTerminal("--------------------------------");
-  writeTerminal("> scrivi un comando per Mat");
-  writeTerminal("> il comando entra in moderazione");
-  writeTerminal("> se approvato, apparirà nella live");
-}
-
-sendBtn?.addEventListener("click", sendCommand);
-
-commandInput?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    sendCommand();
+commandInput.addEventListener("input", () => {
+  if (charCount) {
+    charCount.textContent = commandInput.value.length;
   }
 });
 
-bootTerminal();
+commandForm.addEventListener("submit", sendCommand);
+
+clearLocalBtn.addEventListener("click", () => {
+  localStorage.removeItem(LOCAL_KEY);
+  renderLocalCommands();
+  showToast("Lista locale cancellata.");
+});
+
+renderLocalCommands();
