@@ -20,7 +20,7 @@ const fallbackConfig = {
     telegram: "https://t.me/+2WX7IXU1CzBlNzc0",
     tiktok: "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT ",
     terminal: "terminal: "https://www.clochardcoin.it/terminal/",",
-    live: "https://www.clochardcoin.it/live/"
+    live: "https://live.clochardcoin.it/"
   },
   logs: {
     "06": "",
