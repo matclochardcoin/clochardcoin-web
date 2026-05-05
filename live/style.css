@@ -32,6 +32,7 @@ body {
   color: var(--white);
   font-family: Consolas, Monaco, "Courier New", monospace;
   overflow-x: hidden;
+  padding-bottom: 74px;
 }
 
 .background-stars {
@@ -73,20 +74,6 @@ body {
 .hero-header {
   text-align: center;
   margin-bottom: 18px;
-}
-
-.domain {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 0 12px;
-  padding: 7px 14px;
-  border: 1px solid var(--border-yellow);
-  border-radius: 999px;
-  color: var(--yellow);
-  background: rgba(0, 0, 0, 0.36);
-  font-size: 13px;
-  letter-spacing: 1px;
 }
 
 h1 {
@@ -317,8 +304,6 @@ h1 {
   color: var(--yellow);
   font-size: clamp(24px, 4vw, 36px);
   line-height: 0.95;
-  overflow-wrap: normal;
-  word-break: normal;
 }
 
 .social-card small {
@@ -334,16 +319,21 @@ h1 {
   text-transform: uppercase;
 }
 
-.actions {
+.actions,
+.donation-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+}
+
+.actions {
   margin: 18px 0;
 }
 
 .actions a,
-.actions button {
+.actions button,
+.donation-actions button {
   appearance: none;
   border: 1px solid var(--border-yellow);
   border-radius: 999px;
@@ -361,21 +351,20 @@ h1 {
 }
 
 .actions a:hover,
-.actions button:hover {
+.actions button:hover,
+.donation-actions button:hover {
   transform: translateY(-2px);
   background: rgba(255, 208, 0, 0.14);
   border-color: rgba(255, 208, 0, 0.62);
 }
 
-#donateBtn {
-  border-color: rgba(255, 42, 42, 0.58);
-  background: rgba(255, 42, 42, 0.16);
-  color: var(--white);
+.social-actions {
+  margin-bottom: 16px;
 }
 
 .wallet-box,
-.audio-panel,
 .terminal-section,
+.archive-section,
 .legal {
   margin-top: 16px;
   border: 1px solid var(--border-yellow);
@@ -385,7 +374,7 @@ h1 {
 }
 
 .wallet-box {
-  padding: 16px;
+  padding: 18px;
   text-align: center;
 }
 
@@ -395,9 +384,27 @@ h1 {
   margin-bottom: 10px;
 }
 
+.donation-focus {
+  border-color: rgba(255, 42, 42, 0.44);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 42, 42, 0.18), transparent 35%),
+    radial-gradient(circle at 50% 100%, rgba(255, 208, 0, 0.12), transparent 42%),
+    var(--panel);
+}
+
+.donation-focus h2 {
+  margin: 0 auto 12px;
+  color: var(--yellow);
+  max-width: 760px;
+  font-size: clamp(25px, 5vw, 44px);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
 .wallet-box code {
   display: block;
-  max-width: 100%;
+  max-width: 720px;
+  margin: 16px auto 0;
   overflow-wrap: anywhere;
   color: var(--green);
   background: rgba(56, 255, 139, 0.06);
@@ -414,35 +421,21 @@ h1 {
 }
 
 .support-text {
-  max-width: 720px;
+  max-width: 760px;
   margin: 12px auto 0;
   color: var(--white);
-  line-height: 1.5;
-  font-size: 14px;
+  line-height: 1.55;
+  font-size: 15px;
 }
 
-.audio-panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 15px;
-  text-align: center;
+.donation-actions {
+  margin-top: 14px;
 }
 
-.audio-panel button {
-  appearance: none;
-  border: 1px solid var(--border-red);
-  border-radius: 999px;
-  padding: 11px 16px;
-  background: rgba(255, 42, 42, 0.14);
+#donateBtn {
+  border-color: rgba(255, 42, 42, 0.68);
+  background: rgba(255, 42, 42, 0.18);
   color: var(--white);
-  font: inherit;
-  cursor: pointer;
-}
-
-.audio-panel small {
-  color: var(--muted);
 }
 
 .terminal-section {
@@ -549,19 +542,111 @@ h1 {
 }
 
 .terminal-footer {
-  padding: 14px 18px;
+  padding: 16px 18px;
   border-top: 1px solid var(--border-yellow);
   background: rgba(0, 0, 0, 0.42);
+  text-align: center;
 }
 
-.terminal-footer p {
+.command-footer a {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: min(100%, 320px);
+  padding: 14px 22px;
+  border: 1px solid var(--border-yellow);
+  border-radius: 999px;
+  background: rgba(255, 208, 0, 0.1);
+  color: var(--yellow);
+  text-decoration: none;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.command-footer a:hover {
+  background: rgba(255, 208, 0, 0.18);
+}
+
+.archive-section {
+  overflow: hidden;
+}
+
+.archive-header {
+  padding: 18px;
+  border-bottom: 1px solid var(--border-yellow);
+  background: rgba(0, 0, 0, 0.42);
+  text-align: center;
+}
+
+.archive-header h2 {
   margin: 0;
+  color: var(--yellow);
+  font-size: clamp(22px, 5vw, 38px);
+  text-transform: uppercase;
+}
+
+.archive-header p {
+  margin: 10px auto 0;
+  max-width: 760px;
   color: var(--muted);
   line-height: 1.5;
 }
 
-.terminal-footer strong {
+.archive-list {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.archive-day {
+  border: 1px solid rgba(255, 208, 0, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+  overflow: hidden;
+}
+
+.archive-day summary {
+  padding: 14px;
+  cursor: pointer;
   color: var(--yellow);
+  font-weight: 700;
+}
+
+.archive-day-content {
+  padding: 0 14px 14px;
+  color: var(--white);
+}
+
+.archive-objective {
+  margin: 0 0 12px;
+  color: var(--yellow-strong);
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+
+.archive-stats {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.archive-log {
+  margin: 0 0 10px;
+  color: var(--green);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.archive-log span {
+  color: var(--muted);
+}
+
+.archive-empty {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  color: var(--muted);
+  text-align: center;
 }
 
 .legal {
@@ -592,10 +677,46 @@ summary {
   cursor: pointer;
 }
 
+.audio-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 208, 0, 0.34);
+  border-radius: 999px;
+  background: rgba(3, 3, 3, 0.92);
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+}
+
+.audio-bar button {
+  appearance: none;
+  border: 1px solid var(--border-red);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: rgba(255, 42, 42, 0.14);
+  color: var(--white);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.audio-bar small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: 82px;
   z-index: 10;
   transform: translateX(-50%) translateY(20px);
   padding: 12px 16px;
@@ -661,10 +782,6 @@ summary {
     font-size: 16px;
     line-height: 1.05;
   }
-
-  .audio-panel {
-    flex-direction: column;
-  }
 }
 
 @media (max-width: 520px) {
@@ -706,102 +823,33 @@ summary {
 
   .social-card:nth-child(4) strong {
     font-size: 15px;
-  }.archive-section {
-  margin-top: 16px;
-  border: 1px solid var(--border-yellow);
-  border-radius: 24px;
-  background: var(--panel);
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.48);
-  overflow: hidden;
-}
-
-.archive-header {
-  padding: 18px;
-  border-bottom: 1px solid var(--border-yellow);
-  background: rgba(0, 0, 0, 0.42);
-  text-align: center;
-}
-
-.archive-header h2 {
-  margin: 0;
-  color: var(--yellow);
-  font-size: clamp(22px, 5vw, 38px);
-  text-transform: uppercase;
-}
-
-.archive-header p {
-  margin: 10px auto 0;
-  max-width: 760px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.archive-list {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-}
-
-.archive-day {
-  border: 1px solid rgba(255, 208, 0, 0.2);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.035);
-  overflow: hidden;
-}
-
-.archive-day summary {
-  padding: 14px;
-  cursor: pointer;
-  color: var(--yellow);
-  font-weight: 700;
-}
-
-.archive-day-content {
-  padding: 0 14px 14px;
-  color: var(--white);
-}
-
-.archive-objective {
-  margin: 0 0 12px;
-  color: var(--yellow-strong);
-  text-transform: uppercase;
-  line-height: 1.35;
-}
-
-.archive-log {
-  margin: 0 0 10px;
-  color: var(--green);
-  line-height: 1.45;
-  white-space: pre-wrap;
-}
-
-.archive-log span {
-  color: var(--muted);
-}
-
-.archive-empty {
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  color: var(--muted);
-  text-align: center;
-}
-
+  }
 
   .actions {
     gap: 8px;
   }
 
   .actions a,
-  .actions button {
+  .actions button,
+  .donation-actions button {
     padding: 10px 12px;
     font-size: 12px;
   }
 
   .terminal {
-  min-height: 320px;
-  max-height: 420px;
-  padding: 14px;
-  padding-right: 10px;
-}
+    min-height: 320px;
+    max-height: 420px;
+    padding: 14px;
+    padding-right: 10px;
+  }
+
+  .audio-bar {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+  }
+
+  .audio-bar small {
+    display: none;
+  }
 }
