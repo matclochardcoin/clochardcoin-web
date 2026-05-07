@@ -98,106 +98,130 @@
       </a>
     </section>
 
-    <section class="wallet-box donation-focus">
-      <span>Supporta il cammino di Mat</span>
+    <details class="collapsible-card donation-focus" open>
+      <summary>
+        <span>[+]</span>
+        SUPPORTA IL CAMMINO DI MAT
+      </summary>
 
-      <h2>Ogni spicciolo tiene viva la live.</h2>
+      <div class="collapsible-content wallet-box">
+        <h2>Ogni spicciolo tiene viva la live.</h2>
 
-      <p class="support-text">
-        Mat parte da zero: una missione, un terminale, una community.
-        Ogni donazione aiuta ClochardCoin a produrre contenuti, mantenere la live attiva
-        e far crescere il primo clochard digitale del Web3.
-      </p>
-
-      <code id="solanaWallet">
-        Caricamento...
-      </code>
-
-      <small>
-        Donazione minima suggerita:
-        <b id="minimumDonation">0.01 SOL</b>
-      </small>
-
-      <div class="donation-actions">
-        <button id="donateBtn" type="button">Dona 0.01 SOL</button>
-        <button id="copyWalletBtn" type="button">Copia wallet</button>
-      </div>
-    </section>
-
-    <section class="terminal-section">
-      <div class="terminal-header">
-        <div class="terminal-dots">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-
-        <p>/mat_clochard/live_logs</p>
-      </div>
-
-      <div id="terminal" class="terminal"></div>
-
-      <div class="terminal-footer command-footer">
-        <a id="terminalLink" href="https://www.clochardcoin.it/terminal/" target="_blank" rel="noopener">
-          IMMETTI UN COMANDO
-        </a>
-      </div>
-    </section>
-
-    <section class="archive-section">
-      <div class="archive-header">
-        <h2>ARCHIVIO LOG PRECEDENTI</h2>
-        <p>
-          Le giornate passate di Mat Clochard restano consultabili come memoria del percorso.
+        <p class="support-text">
+          Mat parte da zero: una missione, un terminale, una community.
+          Ogni donazione aiuta ClochardCoin a produrre contenuti, mantenere la live attiva
+          e far crescere il primo clochard digitale del Web3.
         </p>
-      </div>
 
-      <div id="archiveList" class="archive-list">
-        <div class="archive-empty">
-          Archivio in attesa dei primi salvataggi dal pannello moderatore.
+        <code id="solanaWallet">
+          Caricamento...
+        </code>
+
+        <small>
+          Donazione minima suggerita:
+          <b id="minimumDonation">0.01 SOL</b>
+        </small>
+
+        <div class="donation-actions">
+          <button id="donateBtn" type="button">Dona 0.01 SOL</button>
+          <button id="copyWalletBtn" type="button">Copia wallet</button>
         </div>
       </div>
-    </section>
+    </details>
 
-    <section class="legal">
-      <h2>Note del progetto</h2>
+    <details class="collapsible-card terminal-section" open>
+      <summary>
+        <span>[+]</span>
+        LIVE TERMINAL
+      </summary>
 
-      <p>
-        Mat Clochard è il personaggio digitale di ClochardCoin.
-        La live racconta il percorso del progetto: partire da zero,
-        costruire attenzione, community e presenza nel Web3.
-        Donazioni e interazioni supportano lo sviluppo di ClochardCoin,
-        la produzione dei contenuti e l’evoluzione della live.
-      </p>
+      <div class="collapsible-content">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
 
-      <details>
-        <summary>Disclaimer</summary>
+          <p>/mat_clochard/live_logs</p>
+        </div>
 
+        <div id="terminal" class="terminal"></div>
+
+        <div class="terminal-footer command-footer">
+          <a id="terminalLink" href="https://www.clochardcoin.it/terminal/" target="_blank" rel="noopener">
+            IMMETTI UN COMANDO
+          </a>
+        </div>
+      </div>
+    </details>
+
+    <details class="collapsible-card archive-section">
+      <summary>
+        <span>[+]</span>
+        ARCHIVIO LOG PRECEDENTI
+      </summary>
+
+      <div class="collapsible-content">
+        <div class="archive-header">
+          <h2>ARCHIVIO LOG PRECEDENTI</h2>
+          <p>
+            Le giornate passate di Mat Clochard restano consultabili come memoria del percorso.
+          </p>
+        </div>
+
+        <div id="archiveList" class="archive-list">
+          <div class="archive-empty">
+            Archivio in attesa dei primi salvataggi dal pannello moderatore.
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="collapsible-card legal">
+      <summary>
+        <span>[+]</span>
+        NOTE DEL PROGETTO
+      </summary>
+
+      <div class="collapsible-content legal-content">
         <p>
-          La live è un’esperienza narrativa digitale collegata al progetto ClochardCoin.
-          I log, i comandi e le missioni rappresentano il percorso pubblico di Mat Clochard
-          e della community.
+          Mat Clochard è il personaggio digitale di ClochardCoin.
+          La live racconta il percorso del progetto: partire da zero,
+          costruire attenzione, community e presenza nel Web3.
+          Donazioni e interazioni supportano lo sviluppo di ClochardCoin,
+          la produzione dei contenuti e l’evoluzione della live.
         </p>
-      </details>
 
-      <details>
-        <summary>Privacy</summary>
+        <details>
+          <summary>Disclaimer</summary>
 
-        <p>
-          I comandi inviati dal terminale pubblico vengono moderati prima dell’eventuale uso nella live.
-        </p>
-      </details>
+          <p>
+            La live è un’esperienza narrativa digitale collegata al progetto ClochardCoin.
+            I log, i comandi e le missioni rappresentano il percorso pubblico di Mat Clochard
+            e della community.
+          </p>
+        </details>
 
-      <details>
-        <summary>Termini e responsabilità</summary>
+        <details>
+          <summary>Privacy</summary>
 
-        <p>
-          Donazioni e interazioni sono volontarie e supportano il progetto ClochardCoin.
-          I comandi della community possono essere selezionati, modificati o esclusi
-          per sicurezza, rispetto delle persone e coerenza narrativa.
-        </p>
-      </details>
-    </section>
+          <p>
+            I comandi inviati dal terminale pubblico vengono moderati prima dell’eventuale uso nella live.
+          </p>
+        </details>
+
+        <details>
+          <summary>Termini e responsabilità</summary>
+
+          <p>
+            Donazioni e interazioni sono volontarie e supportano il progetto ClochardCoin.
+            I comandi della community possono essere selezionati, modificati o esclusi
+            per sicurezza, rispetto delle persone e coerenza narrativa.
+          </p>
+        </details>
+      </div>
+    </details>
   </main>
 
   <section class="audio-bar">
@@ -216,6 +240,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./script.js?v=103"></script>
+  <script src="./script.js?v=104"></script>
 </body>
 </html>
