@@ -855,8 +855,8 @@ summary {
 }
 /* VIDEO LOOP MAT */
 .mat-video-card {
-  width: min(760px, 92vw);
-  aspect-ratio: 16 / 9;
+  width: min(420px, 92vw);
+  aspect-ratio: 9 / 16;
   border-radius: 28px;
   overflow: hidden;
   border: 1px solid rgba(255, 208, 0, 0.45);
@@ -875,8 +875,21 @@ summary {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center center;
   background: #000;
+}
+
+.mat-video-card .mat-placeholder {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .mat-video-card {
+    width: min(360px, 92vw);
+    aspect-ratio: 9 / 16;
+    border-radius: 22px;
+  }
 }
 
 .mat-video-card .mat-placeholder {
