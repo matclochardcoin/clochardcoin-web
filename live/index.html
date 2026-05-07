@@ -32,17 +32,23 @@
     <section class="mat-stage">
       <div class="mat-glow"></div>
 
-      <div class="mat-card">
-        <img
-          src="../assets/mat.png"
-          alt="Mat Clochard"
-          class="mat-avatar"
-          id="matAvatar"
-        />
+      <div class="mat-card mat-video-card">
+        <video
+          class="mat-video"
+          id="matVideo"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          poster="../assets/mat.png"
+        >
+          <source src="../assets/mat-loop.mp4" type="video/mp4" />
+        </video>
 
         <div class="mat-placeholder" id="matPlaceholder">
           <span>MAT</span>
-          <small>CLOCHARD AI</small>
+          <small>LIVE LOOP</small>
         </div>
       </div>
 
@@ -132,7 +138,7 @@
       <div id="terminal" class="terminal"></div>
 
       <div class="terminal-footer command-footer">
-        <a id="terminalLink" href="https://terminal.clochardcoin.it" target="_blank" rel="noopener">
+        <a id="terminalLink" href="https://www.clochardcoin.it/terminal/" target="_blank" rel="noopener">
           IMMETTI UN COMANDO
         </a>
       </div>
@@ -210,6 +216,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./script.js?v=102"></script>
+  <script src="./script.js?v=103"></script>
 </body>
 </html>
