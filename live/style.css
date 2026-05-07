@@ -899,3 +899,107 @@ summary {
     border-radius: 22px;
   }
 }
+/* CARD TERMINALE APRI / CHIUDI */
+.collapsible-card {
+  margin-top: 16px;
+  border: 1px solid var(--border-yellow);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.48);
+  overflow: hidden;
+}
+
+.collapsible-card > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  color: var(--yellow);
+  background: rgba(0, 0, 0, 0.46);
+  border-bottom: 1px solid var(--border-yellow);
+  cursor: pointer;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.collapsible-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-card > summary span {
+  color: var(--green);
+}
+
+.collapsible-card:not([open]) > summary {
+  border-bottom: none;
+}
+
+.collapsible-card:not([open]) > summary span {
+  color: var(--red);
+}
+
+.collapsible-card[open] > summary span::before {
+  content: "[-]";
+}
+
+.collapsible-card:not([open]) > summary span::before {
+  content: "[+]";
+}
+
+.collapsible-card > summary span {
+  font-size: 0;
+}
+
+.collapsible-card > summary span::before {
+  font-size: 14px;
+}
+
+.collapsible-content {
+  animation: openCard 0.22s ease-out;
+}
+
+@keyframes openCard {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* PULIZIA CARD COLLASSABILI */
+.collapsible-card.wallet-box,
+.collapsible-card.terminal-section,
+.collapsible-card.archive-section,
+.collapsible-card.legal {
+  padding: 0;
+}
+
+.collapsible-card .wallet-box {
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.collapsible-card .terminal-header {
+  border-top: 0;
+}
+
+.collapsible-card.legal {
+  color: var(--muted);
+}
+
+.legal-content {
+  padding: 18px;
+}
+
+.legal-content p {
+  line-height: 1.6;
+}
