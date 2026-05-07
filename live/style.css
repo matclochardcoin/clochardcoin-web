@@ -1,4 +1,4 @@
-:root {
+L:root {
   --black: #030303;
   --panel: rgba(8, 8, 8, 0.9);
   --panel-soft: rgba(255, 255, 255, 0.045);
@@ -876,7 +876,7 @@ summary {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: left 65%;
+  object-position: center 80%;
   background: #000;
 }
 
