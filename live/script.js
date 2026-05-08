@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
 
 const CONFIG_TABLE = "mat_live_config";
 const COMMANDS_TABLE = "mat_commands";
@@ -8,19 +8,23 @@ const CONFIG_ID = 1;
 
 const fallbackConfig = {
   liveDate: "",
-  dailyObjective: "In attesa dell'obiettivo del giorno",
+  dailyObjective: "In attesa della missione del giorno",
+  matStatus: "ONLINE",
+  matEnergy: 21,
+  communityNodes: 0,
+  lastSignal: "IN ASCOLTO",
   instagramFollowers: 0,
   telegramUsers: 0,
   tiktokFollowers: 0,
-  youtubeStatus: "non ancora attivo",
+  youtubeStatus: "A BREVE",
   solanaWallet: "5sc1W9g5VVyBW9EhU5oYhhDF49K751mKjZWo92iemTji",
   minimumDonation: "0.01 SOL",
   socialLinks: {
     instagram: "https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr",
     telegram: "https://t.me/+2WX7IXU1CzBlNzc0",
     tiktok: "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT",
-    terminal: "https://www.clochardcoin.it/terminal/",
-    live: "https://www.clochardcoin.it/live/"
+    terminal: "https://terminal.clochardcoin.it",
+    live: "https://live.clochardcoin.it"
   },
   logs: {
     "06": "",
@@ -49,6 +53,11 @@ document.addEventListener("DOMContentLoaded", init);
 
 function init() {
   el = {
+    matStatus: $("matStatus"),
+    matEnergy: $("matEnergy"),
+    energyBar: $("energyBar"),
+    communityNodes: $("communityNodes"),
+    lastSignal: $("lastSignal"),
     dailyObjective: $("dailyObjective"),
     instagramFollowers: $("instagramFollowers"),
     telegramUsers: $("telegramUsers"),
@@ -66,7 +75,7 @@ function init() {
     ambientAudio: $("ambientAudio"),
     toggleAudioBtn: $("toggleAudioBtn"),
     toast: $("toast"),
-    matAvatar: $("matAvatar"),
+    matVideo: $("matVideo"),
     matPlaceholder: $("matPlaceholder"),
     archiveList: $("archiveList")
   };
@@ -87,10 +96,13 @@ function supabaseHeaders() {
 async function startLive() {
   if (el.terminal) el.terminal.innerHTML = "";
 
-  typeLine(nowLabel(), "BOOT", "CLOCHARDCOIN LIVE TERMINAL ONLINE.");
-  typeLine(nowLabel(), "SIGNAL", "Segnale h24 attivo. Mat resta in ascolto.");
+  typeLine(nowLabel(), "BOOT", "MAT CLOCHARD LIVE NODE ONLINE.");
+  typeLine(nowLabel(), "SYSTEM", "Modalità ecosistema attiva.");
+  typeLine(nowLabel(), "SIGNAL", "Mat resta in ascolto dei segnali community.");
 
   await loadConfigFromSupabase();
+  await updateCommunityStats();
+
   applyConfig();
   printAvailableScheduledLogs();
   loadArchiveFromSupabase();
@@ -102,21 +114,24 @@ async function startLive() {
 
   configInterval = setInterval(async () => {
     await loadConfigFromSupabase();
+    await updateCommunityStats();
     applyConfig();
     printAvailableScheduledLogs();
   }, 10000);
 
   liveSignalInterval = setInterval(() => {
     const signals = [
-      "Segnale h24 stabile.",
+      "scan...",
+      "retry...",
+      "memoria locale stabile.",
       "Mat monitora la strada digitale.",
-      "Terminale vivo. In attesa del prossimo log programmato.",
-      "Connessione community attiva.",
-      "ClochardCoin live pulse confermato."
+      "nodo live ancora attivo.",
+      "nessun comando urgente rilevato.",
+      "missione giornaliera in esecuzione.",
+      "connessione community verificata."
     ];
 
-    const msg = signals[Math.floor(Math.random() * signals.length)];
-    typeLine(nowLabel(), "LIVE", msg);
+    typeLine(nowLabel(), "LIVE", signals[Math.floor(Math.random() * signals.length)]);
   }, 60000);
 
   communityInterval = setInterval(printCommunitySignal, 15000);
@@ -138,9 +153,7 @@ async function loadConfigFromSupabase() {
       cache: "no-store"
     });
 
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
+    if (!response.ok) throw new Error(await response.text());
 
     const rows = await response.json();
     const data = rows[0];
@@ -151,17 +164,58 @@ async function loadConfigFromSupabase() {
       ...structuredClone(fallbackConfig),
       liveDate: data.live_date || "",
       dailyObjective: data.daily_objective || fallbackConfig.dailyObjective,
+      matStatus: data.mat_status || fallbackConfig.matStatus,
+      matEnergy: data.mat_energy ?? fallbackConfig.matEnergy,
       instagramFollowers: data.instagram_followers ?? 0,
       telegramUsers: data.telegram_followers ?? 0,
       tiktokFollowers: data.tiktok_followers ?? 0,
-      logs: data.scheduled_logs || fallbackConfig.logs
+      youtubeStatus: data.youtube_status || fallbackConfig.youtubeStatus,
+      solanaWallet: data.solana_wallet || fallbackConfig.solanaWallet,
+      minimumDonation: data.minimum_donation || fallbackConfig.minimumDonation,
+      socialLinks: {
+        ...fallbackConfig.socialLinks,
+        instagram: data.instagram_link || fallbackConfig.socialLinks.instagram,
+        telegram: data.telegram_link || fallbackConfig.socialLinks.telegram,
+        tiktok: data.tiktok_link || fallbackConfig.socialLinks.tiktok,
+        terminal: data.terminal_link || fallbackConfig.socialLinks.terminal,
+        live: data.live_link || fallbackConfig.socialLinks.live
+      },
+      logs: normalizeLogs(data.scheduled_logs || fallbackConfig.logs)
     };
   } catch (error) {
     console.warn("Errore config Supabase:", error);
   }
 }
 
+function normalizeLogs(rawLogs) {
+  const normalized = {};
+
+  ["06", "09", "12", "15", "18", "20"].forEach((hour) => {
+    const value = rawLogs?.[hour];
+
+    if (typeof value === "string") {
+      normalized[hour] = value;
+      return;
+    }
+
+    if (value && typeof value === "object") {
+      normalized[hour] = value.text || "";
+      return;
+    }
+
+    normalized[hour] = "";
+  });
+
+  return normalized;
+}
+
 function applyConfig() {
+  const energy = clampNumber(config.matEnergy, 0, 100);
+
+  setText(el.matStatus, config.matStatus);
+  setText(el.matEnergy, energy);
+  setText(el.communityNodes, config.communityNodes);
+  setText(el.lastSignal, config.lastSignal);
   setText(el.dailyObjective, config.dailyObjective);
   setText(el.instagramFollowers, config.instagramFollowers);
   setText(el.telegramUsers, config.telegramUsers);
@@ -170,13 +224,28 @@ function applyConfig() {
   setText(el.solanaWallet, config.solanaWallet);
   setText(el.minimumDonation, config.minimumDonation);
 
+  if (el.energyBar) {
+    el.energyBar.style.width = `${energy}%`;
+  }
+
   setHref(el.instagramLink, config.socialLinks.instagram);
   setHref(el.telegramLink, config.socialLinks.telegram);
   setHref(el.tiktokLink, config.socialLinks.tiktok);
   setHref(el.terminalLink, config.socialLinks.terminal);
 
   if (el.donateBtn) {
-    el.donateBtn.textContent = `Dona ${config.minimumDonation}`;
+    el.donateBtn.textContent = `Ricarica ${config.minimumDonation}`;
+  }
+}
+
+async function updateCommunityStats() {
+  const commands = await fetchCommunityCommands(50);
+
+  config.communityNodes = commands.length;
+
+  if (commands.length) {
+    const latest = commands[0];
+    config.lastSignal = clean(latest.nickname) || "NODE";
   }
 }
 
@@ -221,9 +290,7 @@ function printAvailableScheduledLogs() {
     return;
   }
 
-  if (liveDate < today) {
-    return;
-  }
+  if (liveDate < today) return;
 
   const currentMinutes = getCurrentMinutes();
   const hours = ["06", "09", "12", "15", "18", "20"];
@@ -243,23 +310,21 @@ function printAvailableScheduledLogs() {
   });
 }
 
-async function fetchCommunityCommands() {
+async function fetchCommunityCommands(limit = 5) {
   try {
     const query =
       `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}` +
       `?select=id,nickname,command,created_at,status` +
       `&status=eq.approved` +
       `&order=created_at.desc` +
-      `&limit=5`;
+      `&limit=${limit}`;
 
     const response = await fetch(query, {
       headers: supabaseHeaders(),
       cache: "no-store"
     });
 
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
+    if (!response.ok) throw new Error(await response.text());
 
     return await response.json();
   } catch (error) {
@@ -269,7 +334,7 @@ async function fetchCommunityCommands() {
 }
 
 async function printCommunitySignal() {
-  const commands = await fetchCommunityCommands();
+  const commands = await fetchCommunityCommands(5);
   if (!commands.length) return;
 
   const fresh = commands.filter((item) => item.id !== lastCommunityCommandId);
@@ -281,9 +346,11 @@ async function printCommunitySignal() {
   lastCommunityCommandId = item.id;
 
   const nickname = clean(item.nickname) || "utente_anonimo";
+  config.lastSignal = nickname;
+  applyConfig();
 
   typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
-  typeLine(nowLabel(), "MAT", "Comando approvato ricevuto. Segnale integrato nella live.");
+  typeLine(nowLabel(), "MAT", "Segnale ricevuto. Missione candidata alla memoria del nodo.");
 }
 
 async function loadArchiveFromSupabase() {
@@ -301,9 +368,7 @@ async function loadArchiveFromSupabase() {
       cache: "no-store"
     });
 
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
+    if (!response.ok) throw new Error(await response.text());
 
     const archiveItems = await response.json();
     renderArchive(archiveItems);
@@ -336,7 +401,7 @@ function renderArchive(items) {
     const details = document.createElement("details");
     details.className = "archive-day";
 
-    const logs = day.scheduled_logs || {};
+    const logs = normalizeLogs(day.scheduled_logs || {});
     const date = day.live_date || day.archive_date;
 
     details.innerHTML = `
@@ -344,7 +409,7 @@ function renderArchive(items) {
 
       <div class="archive-day-content">
         <p class="archive-objective">
-          ${escapeHtml(day.daily_objective || "Obiettivo non disponibile")}
+          ${escapeHtml(day.daily_objective || "Missione non disponibile")}
         </p>
 
         <p class="archive-stats">
@@ -409,7 +474,7 @@ async function typeLineInternal(label, category, text) {
   for (let i = 0; i <= full.length; i++) {
     line.innerHTML = formatLine(full.slice(0, i));
     el.terminal.scrollTop = el.terminal.scrollHeight;
-    await sleep(14 + Math.random() * 20);
+    await sleep(12 + Math.random() * 16);
   }
 
   line.classList.remove("cursor");
@@ -436,6 +501,14 @@ function nowLabel() {
 
 function clean(value) {
   return String(value || "").trim();
+}
+
+function clampNumber(value, min, max) {
+  const number = Number(value);
+
+  if (Number.isNaN(number)) return min;
+
+  return Math.max(min, Math.min(max, number));
 }
 
 function sleep(ms) {
@@ -477,13 +550,13 @@ function setupButtons() {
   if (el.donateBtn) {
     el.donateBtn.addEventListener("click", () => {
       const amount = String(config.minimumDonation || "0.01 SOL").replace(" SOL", "");
-      const label = encodeURIComponent("Supporta Mat Clochard");
+      const label = encodeURIComponent("Ricarica Mat Clochard");
       const solanaPayUrl = `solana:${config.solanaWallet}?amount=${amount}&label=${label}`;
 
       window.location.href = solanaPayUrl;
 
       setTimeout(() => {
-        showToast("Se il wallet non si apre, copia il wallet e invia manualmente.");
+        showToast("Se Phantom non si apre, copia il wallet e invia manualmente.");
       }, 800);
     });
   }
@@ -514,10 +587,10 @@ function setupButtons() {
 }
 
 function setupMatFallback() {
-  if (!el.matAvatar || !el.matPlaceholder) return;
+  if (!el.matVideo || !el.matPlaceholder) return;
 
-  el.matAvatar.addEventListener("error", () => {
-    el.matAvatar.style.display = "none";
+  el.matVideo.addEventListener("error", () => {
+    el.matVideo.style.display = "none";
     el.matPlaceholder.style.display = "grid";
   });
 }
