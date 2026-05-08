@@ -39,12 +39,14 @@ const fallbackConfig = {
 let config = JSON.parse(JSON.stringify(fallbackConfig));
 let audioEnabled = false;
 let terminalQueue = Promise.resolve();
-let communityInterval = null;
-let liveSignalInterval = null;
 let configInterval = null;
 let archiveInterval = null;
+let missionPulseInterval = null;
+let communityInterval = null;
 let printedLogKeys = new Set();
-let lastCommunityCommandId = null;
+let printedCommandIds = new Set();
+let lastMissionText = "";
+let bootPrinted = false;
 
 const $ = (id) => document.getElementById(id);
 let el = {};
@@ -97,44 +99,44 @@ function supabaseHeaders() {
 async function startLive() {
   if (el.terminal) el.terminal.innerHTML = "";
 
-  typeLine(nowLabel(), "BOOT", "MAT CLOCHARD LIVE NODE ONLINE.");
-  typeLine(nowLabel(), "SYSTEM", "Modalità ecosistema attiva.");
-  typeLine(nowLabel(), "SIGNAL", "Mat resta in ascolto dei segnali community.");
+  printBootSequence();
 
-  await refreshLiveData();
+  await refreshLiveData(true);
 
   clearInterval(configInterval);
-  clearInterval(liveSignalInterval);
-  clearInterval(communityInterval);
   clearInterval(archiveInterval);
+  clearInterval(missionPulseInterval);
+  clearInterval(communityInterval);
 
-  configInterval = setInterval(refreshLiveData, 10000);
-
-  liveSignalInterval = setInterval(() => {
-    const signals = [
-      "scan...",
-      "retry...",
-      "memoria locale stabile.",
-      "Mat monitora la strada digitale.",
-      "nodo live ancora attivo.",
-      "nessun comando urgente rilevato.",
-      "missione giornaliera in esecuzione.",
-      "connessione community verificata."
-    ];
-
-    typeLine(nowLabel(), "LIVE", signals[Math.floor(Math.random() * signals.length)]);
-  }, 60000);
-
-  communityInterval = setInterval(printCommunitySignal, 15000);
+  configInterval = setInterval(() => refreshLiveData(false), 12000);
   archiveInterval = setInterval(loadArchiveFromSupabase, 60000);
+  communityInterval = setInterval(printNewCommunitySignals, 18000);
 
-  printCommunitySignal();
+  missionPulseInterval = setInterval(() => {
+    printMissionPulse();
+  }, 90000);
 }
 
-async function refreshLiveData() {
+function printBootSequence() {
+  if (bootPrinted) return;
+  bootPrinted = true;
+
+  typeLine(nowLabel(), "BOOT", "MAT CLOCHARD LIVE NODE ONLINE.");
+  typeLine(nowLabel(), "SYSTEM", "Canale live sincronizzato con il cervello operativo.");
+  typeLine(nowLabel(), "MISSION", "In attesa della missione attiva.");
+}
+
+async function refreshLiveData(firstLoad = false) {
   await loadConfigFromSupabase();
   await updateCommunityStats();
   applyConfig();
+
+  if (firstLoad || config.dailyObjective !== lastMissionText) {
+    lastMissionText = config.dailyObjective;
+    typeLine(nowLabel(), "MISSION", config.dailyObjective);
+    typeLine(nowLabel(), "STATUS", `Stato Mat: ${config.matStatus} · Energia: ${config.matEnergy}%`);
+  }
+
   printAvailableScheduledLogs();
   loadArchiveFromSupabase();
 }
@@ -246,7 +248,28 @@ async function updateCommunityStats() {
   if (commands.length) {
     const latest = commands[0];
     config.lastSignal = clean(latest.nickname) || "NODE";
+  } else {
+    config.lastSignal = "IN ASCOLTO";
   }
+}
+
+function printMissionPulse() {
+  const mission = clean(config.dailyObjective);
+
+  if (!mission || mission === fallbackConfig.dailyObjective) {
+    typeLine(nowLabel(), "IDLE", "Nessuna missione attiva. Mat resta in ascolto della community.");
+    return;
+  }
+
+  const pulses = [
+    `Missione ancora attiva: ${mission}`,
+    "Scansione lenta. Nessun risultato confermato ancora.",
+    "Mat mantiene il nodo acceso e continua a raccogliere segnali.",
+    "La missione resta aperta. I risultati verranno consolidati nei log programmati."
+  ];
+
+  const index = Math.floor(Math.random() * pulses.length);
+  typeLine(nowLabel(), "SCAN", pulses[index]);
 }
 
 function todayIsoDate() {
@@ -333,24 +356,28 @@ async function fetchCommunityCommands(limit = 5) {
   }
 }
 
-async function printCommunitySignal() {
-  const commands = await fetchCommunityCommands(5);
+async function printNewCommunitySignals() {
+  const commands = await fetchCommunityCommands(10);
   if (!commands.length) return;
 
-  const fresh = commands.filter((item) => item.id !== lastCommunityCommandId);
-  const pool = fresh.length ? fresh : commands;
-  const item = pool[Math.floor(Math.random() * pool.length)];
+  const newCommands = commands
+    .filter((item) => !printedCommandIds.has(item.id))
+    .reverse();
 
-  if (!item || !clean(item.command)) return;
+  if (!newCommands.length) return;
 
-  lastCommunityCommandId = item.id;
+  newCommands.forEach((item) => {
+    if (!item || !clean(item.command)) return;
 
-  const nickname = clean(item.nickname) || "utente_anonimo";
-  config.lastSignal = nickname;
-  applyConfig();
+    printedCommandIds.add(item.id);
 
-  typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
-  typeLine(nowLabel(), "MAT", "Segnale ricevuto. Missione candidata alla memoria del nodo.");
+    const nickname = clean(item.nickname) || "utente_anonimo";
+    config.lastSignal = nickname;
+    applyConfig();
+
+    typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
+    typeLine(nowLabel(), "MISSION", "Segnale approvato. Mat lo integra nel percorso live.");
+  });
 }
 
 async function loadArchiveFromSupabase() {
@@ -474,7 +501,7 @@ async function typeLineInternal(label, category, text) {
   for (let i = 0; i <= full.length; i++) {
     line.innerHTML = formatLine(full.slice(0, i));
     el.terminal.scrollTop = el.terminal.scrollHeight;
-    await sleep(12 + Math.random() * 16);
+    await sleep(10 + Math.random() * 12);
   }
 
   line.classList.remove("cursor");
