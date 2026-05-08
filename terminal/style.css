@@ -436,3 +436,20 @@ button:hover,
     text-align: center;
   }
 }
+.gold-btn {
+  margin-top: 10px;
+  background: #e6b800 !important;
+  color: #000 !important;
+}
+
+.command-form h2 {
+  margin-top: 26px;
+  color: var(--yellow);
+  text-transform: uppercase;
+}
+
+.command-form hr {
+  margin: 28px 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 208, 0, 0.25);
+}
