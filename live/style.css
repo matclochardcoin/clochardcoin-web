@@ -1367,3 +1367,21 @@ body.mode-ALERT .mission-box {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.58; }
 }
+/* LINK FONTI NELLA MEMORIA DI MAT */
+
+.archive-log a {
+  color: var(--yellow);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  transition:
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+}
+
+.archive-log a:hover {
+  color: var(--yellow-strong);
+  text-shadow: 0 0 12px rgba(255, 208, 0, 0.35);
+}
