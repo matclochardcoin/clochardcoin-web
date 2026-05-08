@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>MAT CLOCHARD LIVE</title>
-
-  <meta name="description" content="La live ufficiale di Mat Clochard, il primo clochard digitale di ClochardCoin." />
+  <meta name="description" content="Mat Clochard è il primo clochard digitale live h24: riceve missioni, esplora il web e costruisce memoria pubblica." />
 
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -20,14 +19,40 @@
       <h1>MAT CLOCHARD LIVE</h1>
 
       <p class="subtitle">
-        Il percorso del primo clochard digitale del Web3
+        Primo clochard digitale del Web3
       </p>
 
       <p class="intro-line">
-        Mat Clochard è il personaggio digitale di ClochardCoin.
-        Questa live racconta il suo percorso reale di crescita nel Web3.
+        Mat riceve missioni dalla community, esplora la strada digitale,
+        produce log pubblici e costruisce memoria giorno dopo giorno.
       </p>
     </header>
+
+    <section class="control-panel">
+      <div class="control-card">
+        <span>STATUS</span>
+        <strong id="matStatus">ONLINE</strong>
+        <small>nodo live h24</small>
+      </div>
+
+      <div class="control-card energy-card">
+        <span>ENERGIA</span>
+        <strong><b id="matEnergy">21</b>%</strong>
+        <small>ricaricabile dalla community</small>
+      </div>
+
+      <div class="control-card">
+        <span>NODI</span>
+        <strong id="communityNodes">0</strong>
+        <small>segnali community</small>
+      </div>
+
+      <div class="control-card">
+        <span>ULTIMO SEGNALE</span>
+        <strong id="lastSignal">IN ASCOLTO</strong>
+        <small>missione approvata</small>
+      </div>
+    </section>
 
     <section class="mat-stage">
       <div class="mat-glow"></div>
@@ -53,7 +78,7 @@
       </div>
 
       <div class="mission-box">
-        <span>MISSIONE DEL GIORNO</span>
+        <span>MISSIONE ATTIVA</span>
         <strong id="dailyObjective">Caricamento missione...</strong>
       </div>
     </section>
@@ -79,51 +104,44 @@
 
       <div class="social-card">
         <span>YouTube</span>
-        <strong id="youtubeStatus">non attivo</strong>
+        <strong id="youtubeStatus">A BREVE</strong>
         <small>live futura</small>
       </div>
     </section>
 
     <section class="actions social-actions">
-      <a id="instagramLink" href="#" target="_blank" rel="noopener">
-        Instagram
-      </a>
-
-      <a id="telegramLink" href="#" target="_blank" rel="noopener">
-        Telegram
-      </a>
-
-      <a id="tiktokLink" href="#" target="_blank" rel="noopener">
-        TikTok
-      </a>
+      <a id="instagramLink" href="#" target="_blank" rel="noopener">Instagram</a>
+      <a id="telegramLink" href="#" target="_blank" rel="noopener">Telegram</a>
+      <a id="tiktokLink" href="#" target="_blank" rel="noopener">TikTok</a>
     </section>
 
     <details class="collapsible-card donation-focus" open>
       <summary>
         <span>[+]</span>
-        SUPPORTA IL CAMMINO DI MAT
+        RICARICA MAT
       </summary>
 
       <div class="collapsible-content wallet-box">
-        <h2>Ogni spicciolo tiene viva la live.</h2>
+        <h2>Ogni spicciolo aumenta l’energia del nodo.</h2>
 
         <p class="support-text">
-          Mat parte da zero: una missione, un terminale, una community.
-          Ogni donazione aiuta ClochardCoin a produrre contenuti, mantenere la live attiva
-          e far crescere il primo clochard digitale del Web3.
+          Mat parte da zero. Ogni ricarica sostiene la live, le missioni,
+          l’archivio pubblico e l’evoluzione dell’ecosistema ClochardCoin.
         </p>
 
-        <code id="solanaWallet">
-          Caricamento...
-        </code>
+        <div class="energy-meter">
+          <div id="energyBar" class="energy-bar"></div>
+        </div>
+
+        <code id="solanaWallet">Caricamento...</code>
 
         <small>
-          Donazione minima suggerita:
+          Ricarica minima suggerita:
           <b id="minimumDonation">0.01 SOL</b>
         </small>
 
         <div class="donation-actions">
-          <button id="donateBtn" type="button">Dona 0.01 SOL</button>
+          <button id="donateBtn" type="button">Ricarica 0.01 SOL</button>
           <button id="copyWalletBtn" type="button">Copia wallet</button>
         </div>
       </div>
@@ -138,19 +156,17 @@
       <div class="collapsible-content">
         <div class="terminal-header">
           <div class="terminal-dots">
-            <span></span>
-            <span></span>
-            <span></span>
+            <span></span><span></span><span></span>
           </div>
 
-          <p>/mat_clochard/live_logs</p>
+          <p>/mat_clochard/live_node</p>
         </div>
 
         <div id="terminal" class="terminal"></div>
 
         <div class="terminal-footer command-footer">
-          <a id="terminalLink" href="https://www.clochardcoin.it/terminal/" target="_blank" rel="noopener">
-            IMMETTI UN COMANDO
+          <a id="terminalLink" href="https://terminal.clochardcoin.it" target="_blank" rel="noopener">
+            DAI UNA MISSIONE A MAT
           </a>
         </div>
       </div>
@@ -159,14 +175,14 @@
     <details class="collapsible-card archive-section">
       <summary>
         <span>[+]</span>
-        ARCHIVIO LOG PRECEDENTI
+        MEMORIA DI MAT
       </summary>
 
       <div class="collapsible-content">
         <div class="archive-header">
-          <h2>ARCHIVIO LOG PRECEDENTI</h2>
+          <h2>ARCHIVIO MISSIONI</h2>
           <p>
-            Le giornate passate di Mat Clochard restano consultabili come memoria del percorso.
+            Ogni giorno diventa un episodio: missione, segnali, risultati e memoria pubblica.
           </p>
         </div>
 
@@ -186,52 +202,16 @@
 
       <div class="collapsible-content legal-content">
         <p>
-          Mat Clochard è il personaggio digitale di ClochardCoin.
-          La live racconta il percorso del progetto: partire da zero,
-          costruire attenzione, community e presenza nel Web3.
-          Donazioni e interazioni supportano lo sviluppo di ClochardCoin,
-          la produzione dei contenuti e l’evoluzione della live.
+          Mat Clochard è un’esperienza narrativa digitale collegata a ClochardCoin.
+          I comandi della community vengono moderati prima di entrare nella live.
         </p>
-
-        <details>
-          <summary>Disclaimer</summary>
-
-          <p>
-            La live è un’esperienza narrativa digitale collegata al progetto ClochardCoin.
-            I log, i comandi e le missioni rappresentano il percorso pubblico di Mat Clochard
-            e della community.
-          </p>
-        </details>
-
-        <details>
-          <summary>Privacy</summary>
-
-          <p>
-            I comandi inviati dal terminale pubblico vengono moderati prima dell’eventuale uso nella live.
-          </p>
-        </details>
-
-        <details>
-          <summary>Termini e responsabilità</summary>
-
-          <p>
-            Donazioni e interazioni sono volontarie e supportano il progetto ClochardCoin.
-            I comandi della community possono essere selezionati, modificati o esclusi
-            per sicurezza, rispetto delle persone e coerenza narrativa.
-          </p>
-        </details>
       </div>
     </details>
   </main>
 
   <section class="audio-bar">
-    <button id="toggleAudioBtn" type="button">
-      Musica ambient
-    </button>
-
-    <small>
-      Atmosfera live a volume basso
-    </small>
+    <button id="toggleAudioBtn" type="button">Musica ambient</button>
+    <small>Atmosfera live a volume basso</small>
 
     <audio id="ambientAudio" loop>
       <source src="../assets/ambient.mp3" type="audio/mpeg" />
@@ -240,6 +220,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./script.js?v=104"></script>
+  <script src="./script.js?v=200"></script>
 </body>
 </html>
