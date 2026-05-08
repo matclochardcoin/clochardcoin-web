@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>ClochardCoin | Mat Clochard Live System</title>
+  <title>ClochardCoin | Mat Clochard OSINT Live</title>
+  <meta name="description" content="Mat Clochard verifica notizie, analizza token e trasforma i comandi della community in report OSINT pubblici." />
 
   <style>
     * { box-sizing: border-box; }
@@ -28,7 +29,7 @@
 
     .card {
       width: 100%;
-      max-width: 470px;
+      max-width: 500px;
       border: 1px solid rgba(255, 204, 51, 0.38);
       background: rgba(8, 8, 8, 0.92);
       border-radius: 26px;
@@ -37,7 +38,7 @@
     }
 
     .logo {
-      width: 150px;
+      width: 145px;
       max-width: 70%;
       margin: 0 auto 18px;
       display: block;
@@ -55,20 +56,30 @@
 
     h1 {
       margin: 0;
-      font-size: 32px;
+      font-size: 34px;
       line-height: 1.05;
       color: #fff;
     }
 
-    h1 span {
-      color: #e32222;
-    }
+    h1 span { color: #e32222; }
 
     .subtitle {
-      margin: 14px 0 22px;
+      margin: 14px 0 18px;
       color: #d2d2d2;
       line-height: 1.45;
       font-size: 15px;
+    }
+
+    .claim {
+      border: 1px solid rgba(56, 255, 139, 0.2);
+      border-radius: 18px;
+      background: rgba(56, 255, 139, 0.055);
+      color: #38ff8b;
+      padding: 14px;
+      margin: 0 0 18px;
+      font-family: monospace;
+      font-size: 14px;
+      line-height: 1.45;
     }
 
     .ticker {
@@ -77,7 +88,7 @@
       border: 1px solid rgba(255, 204, 51, 0.35);
       background: #090909;
       border-radius: 14px;
-      margin: 0 0 22px;
+      margin: 0 0 18px;
       padding: 10px 0;
       white-space: nowrap;
     }
@@ -102,16 +113,14 @@
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
       padding: 14px;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
       color: #d8d8d8;
       font-family: monospace;
       font-size: 13px;
       line-height: 1.55;
     }
 
-    .terminal-line strong {
-      color: #ffcc33;
-    }
+    .terminal-line strong { color: #ffcc33; }
 
     .btn {
       display: block;
@@ -125,6 +134,18 @@
       background: #ffcc33;
       border: 1px solid #ffcc33;
       letter-spacing: 0.4px;
+    }
+
+    .btn.news {
+      color: #050505;
+      background: #38ff8b;
+      border-color: #38ff8b;
+    }
+
+    .btn.token {
+      color: #fff;
+      background: rgba(227,34,34,0.18);
+      border-color: rgba(227,34,34,0.65);
     }
 
     .btn.secondary {
@@ -152,33 +173,39 @@
   <main class="card">
     <img class="logo" src="./assets/logo.png" alt="ClochardCoin logo" />
 
-    <div class="tag">CLOCHARDCOIN // LIVE SYSTEM</div>
+    <div class="tag">CLOCHARDCOIN // OSINT LIVE SYSTEM</div>
 
     <h1>MAT <span>CLOCHARD</span></h1>
 
     <p class="subtitle">
-      Il primo clochard digitale del Web3. Vive nella live, riceve segnali dalla community
-      e trasforma i comandi in log pubblici.
+      Il primo clochard digitale del Web3. Verifica notizie, analizza token
+      e trasforma i comandi della community in report pubblici.
     </p>
+
+    <div class="claim">
+      Ogni missione completata aumenta la memoria pubblica di Mat.
+    </div>
 
     <div class="ticker">
       <div class="ticker-track">
-        [ECOSISTEMA] Live h24 attiva · Terminale pubblico online · Comandi community moderati · Log giornalieri programmati · ClochardCoin costruisce una moneta di identità ·
+        [OSINT] Verifica notizie · Analisi token · Report pubblici · Fonti aperte · Community signals · Memoria di Mat in crescita ·
       </div>
     </div>
 
     <div class="terminal-line">
-      <strong>[BOOT]</strong> Sistema ClochardCoin attivo.<br>
-      <strong>[LIVE]</strong> Mat è online h24.<br>
-      <strong>[USER]</strong> Lascia un comando e diventa parte della storia.
+      <strong>[NEWS]</strong> Invia una notizia da verificare.<br>
+      <strong>[TOKEN]</strong> Invia un token da analizzare.<br>
+      <strong>[MEMORY]</strong> I report completati restano pubblici.
     </div>
 
+    <a class="btn news" href="./terminal/">VERIFICA UNA NOTIZIA</a>
+    <a class="btn token" href="./terminal/">VERIFICA UN TOKEN</a>
     <a class="btn" href="./live/">ENTRA NELLA LIVE</a>
     <a class="btn secondary" href="./terminal/">DAI UN COMANDO A MAT</a>
     <a class="btn danger" href="./terminal/moderatore.html">AREA MODERATORE</a>
 
     <div class="footer">
-      ClochardCoin · moneta di identità · powered by community signals
+      ClochardCoin · moneta di identità · powered by public reports
     </div>
   </main>
 </body>
