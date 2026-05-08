@@ -49,6 +49,8 @@ let printedCommandIds = new Set();
 let lastMissionText = "";
 let lastModeText = "";
 let bootPrinted = false;
+let currentReports = [];
+let selectedReportId = null;
 
 const $ = (id) => document.getElementById(id);
 let el = {};
@@ -82,12 +84,14 @@ function init() {
     toast: $("toast"),
     matVideo: $("matVideo"),
     matPlaceholder: $("matPlaceholder"),
-    archiveList: $("archiveList")
+    archiveList: $("archiveList"),
+    reportViewer: $("reportViewer")
   };
 
   applyConfig();
   setupButtons();
   setupMatFallback();
+  setupArchiveClicks();
   startLive();
 }
 
@@ -115,10 +119,7 @@ async function startLive() {
   configInterval = setInterval(() => refreshLiveData(false), 12000);
   archiveInterval = setInterval(loadArchiveFromSupabase, 60000);
   communityInterval = setInterval(printNewCommunitySignals, 18000);
-
-  missionPulseInterval = setInterval(() => {
-    printMissionPulse();
-  }, 90000);
+  missionPulseInterval = setInterval(printMissionPulse, 90000);
 }
 
 function printBootSequence() {
@@ -238,6 +239,12 @@ function applyConfig() {
   setText(el.solanaWallet, config.solanaWallet);
   setText(el.minimumDonation, config.minimumDonation);
 
+  document.body.className = document.body.className
+    .replace(/\bmode-[A-Z]+\b/g, "")
+    .trim();
+
+  document.body.classList.add(`mode-${config.matMode || "IDLE"}`);
+
   if (el.energyBar) {
     el.energyBar.style.width = `${energy}%`;
   }
@@ -317,32 +324,6 @@ function printMissionPulse() {
   typeLine(nowLabel(), mode === "IDLE" ? "IDLE" : "SCAN", pulses[index]);
 }
 
-function todayIsoDate() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function getCurrentMinutes() {
-  const now = new Date();
-  return now.getHours() * 60 + now.getMinutes();
-}
-
-function logHourToMinutes(hour) {
-  return Number(hour) * 60;
-}
-
-function getLogCategory(hour) {
-  const categories = {
-    "06": "BOOT",
-    "09": "USER_SIGNAL",
-    "12": "SCAN",
-    "15": "RESULT",
-    "18": "MAT",
-    "20": "REPORT"
-  };
-
-  return categories[hour] || "MAT";
-}
-
 function printAvailableScheduledLogs() {
   const liveDate = config.liveDate || todayIsoDate();
   const today = todayIsoDate();
@@ -367,7 +348,7 @@ function printAvailableScheduledLogs() {
     const text = clean(config.logs?.[hour]);
 
     if (!text) return;
-    if (currentMinutes < logHourToMinutes(hour)) return;
+    if (currentMinutes < Number(hour) * 60) return;
 
     const logKey = `${liveDate}-${hour}-${text}`;
 
@@ -376,6 +357,19 @@ function printAvailableScheduledLogs() {
     printedLogKeys.add(logKey);
     typeLine(`${hour}:00`, getLogCategory(hour), text);
   });
+}
+
+function getLogCategory(hour) {
+  const categories = {
+    "06": "BOOT",
+    "09": "USER_SIGNAL",
+    "12": "SCAN",
+    "15": "RESULT",
+    "18": "MAT",
+    "20": "REPORT"
+  };
+
+  return categories[hour] || "MAT";
 }
 
 async function fetchCommunityCommands(limit = 5) {
@@ -438,7 +432,7 @@ async function loadArchiveFromSupabase() {
       `${SUPABASE_URL}/rest/v1/${REPORTS_TABLE}` +
       `?select=id,created_at,command_id,nickname,command,mat_solution,mat_status,mat_mode,mat_energy` +
       `&order=created_at.desc` +
-      `&limit=20`;
+      `&limit=30`;
 
     const response = await fetch(query, {
       headers: supabaseHeaders(),
@@ -447,8 +441,8 @@ async function loadArchiveFromSupabase() {
 
     if (!response.ok) throw new Error(await response.text());
 
-    const reports = await response.json();
-    renderArchive(reports);
+    currentReports = await response.json();
+    renderArchive(currentReports);
   } catch (error) {
     console.warn("Errore archivio report:", error);
 
@@ -469,45 +463,90 @@ function renderArchive(items) {
         Nessun report completato. Quando Mat pubblica una soluzione, apparirà qui.
       </div>
     `;
+
+    renderReportViewer(null);
     return;
+  }
+
+  if (!selectedReportId || !items.some((item) => String(item.id) === String(selectedReportId))) {
+    selectedReportId = items[0].id;
   }
 
   el.archiveList.innerHTML = "";
 
   items.forEach((report) => {
-    const details = document.createElement("details");
-    details.className = "archive-day";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "report-list-item";
+    button.dataset.reportId = report.id;
 
-    const date = formatDateTimeIt(report.created_at);
+    if (String(report.id) === String(selectedReportId)) {
+      button.classList.add("active");
+    }
 
-    details.innerHTML = `
-      <summary>
-        ${escapeHtml(date)} · @${escapeHtml(report.nickname || "utente_anonimo")}
-      </summary>
-
-      <div class="archive-day-content">
-        <p class="archive-objective">COMANDO</p>
-
-        <p class="archive-log">
-          ${escapeHtml(report.command || "Comando non disponibile")}
-        </p>
-
-        <p class="archive-objective">SOLUZIONE DI MAT</p>
-
-        <p class="archive-log">
-          ${linkifyText(report.mat_solution || "Soluzione non disponibile")}
-        </p>
-
-        <p class="archive-stats">
-          Stato: ${escapeHtml(report.mat_status || "ONLINE")} ·
-          Modalità: ${escapeHtml(report.mat_mode || "COMPLETED")} ·
-          Energia: ${escapeHtml(report.mat_energy ?? 0)}%
-        </p>
-      </div>
+    button.innerHTML = `
+      <span>${escapeHtml(formatDateTimeIt(report.created_at))}</span>
+      <strong>@${escapeHtml(report.nickname || "utente_anonimo")}</strong>
+      <small>${escapeHtml(shortText(report.command || "Comando non disponibile", 92))}</small>
     `;
 
-    el.archiveList.appendChild(details);
+    el.archiveList.appendChild(button);
   });
+
+  const selected = items.find((item) => String(item.id) === String(selectedReportId)) || items[0];
+  renderReportViewer(selected);
+}
+
+function setupArchiveClicks() {
+  if (!el.archiveList) return;
+
+  el.archiveList.addEventListener("click", (event) => {
+    const button = event.target.closest(".report-list-item");
+    if (!button) return;
+
+    selectedReportId = button.dataset.reportId;
+
+    renderArchive(currentReports);
+  });
+}
+
+function renderReportViewer(report) {
+  if (!el.reportViewer) return;
+
+  if (!report) {
+    el.reportViewer.innerHTML = `
+      <span class="report-viewer-kicker">MEMORIA SELEZIONATA</span>
+      <h3>Seleziona un report</h3>
+      <p>
+        Clicca una missione completata dalla lista per leggere il comando,
+        la soluzione di Mat e le fonti collegate.
+      </p>
+    `;
+    return;
+  }
+
+  el.reportViewer.innerHTML = `
+    <span class="report-viewer-kicker">REPORT COMPLETATO</span>
+
+    <h3>@${escapeHtml(report.nickname || "utente_anonimo")}</h3>
+
+    <p class="report-meta">
+      ${escapeHtml(formatDateTimeIt(report.created_at))} ·
+      Stato: ${escapeHtml(report.mat_status || "ONLINE")} ·
+      Modalità: ${escapeHtml(report.mat_mode || "COMPLETED")} ·
+      Energia: ${escapeHtml(report.mat_energy ?? 0)}%
+    </p>
+
+    <div class="report-viewer-block">
+      <strong>COMANDO</strong>
+      <p>${escapeHtml(report.command || "Comando non disponibile")}</p>
+    </div>
+
+    <div class="report-viewer-block">
+      <strong>SOLUZIONE DI MAT</strong>
+      <p>${linkifyText(report.mat_solution || "Soluzione non disponibile")}</p>
+    </div>
+  `;
 }
 
 function renderArchiveLog(label, category, text) {
@@ -587,11 +626,26 @@ function formatLine(text) {
   `;
 }
 
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getCurrentMinutes() {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
 function nowLabel() {
   return new Date().toLocaleTimeString("it-IT", {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function shortText(value, max = 90) {
+  const text = clean(value);
+  if (text.length <= max) return text;
+  return `${text.slice(0, max).trim()}...`;
 }
 
 function clean(value) {
