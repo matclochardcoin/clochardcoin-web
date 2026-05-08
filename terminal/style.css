@@ -501,21 +501,52 @@ button:hover,
     grid-template-columns: 1fr;
   }
 }
-/* FIX MODERATORE OSINT - LINK, BADGE, CARD */
+/* FIX MODERATORE OSINT - MOBILE CARD PULITA */
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.page,
+.terminal-card,
+.command-form,
+.commands-list,
+.command-item {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
 
 .command-item {
   position: relative;
-  overflow: hidden;
+  width: 100%;
+  padding: 14px;
   border-color: rgba(56, 255, 139, 0.22);
 }
 
+.command-item strong,
+.command-item small,
+.command-item p,
+.command-item a {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .command-item p {
+  display: block;
+  margin: 8px 0 0;
+  color: var(--green);
+  line-height: 1.55;
+  white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
-  line-height: 1.55;
 }
 
 .command-item a {
+  display: inline;
   color: var(--yellow);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -523,8 +554,19 @@ button:hover,
   word-break: break-all;
 }
 
+.command-item small {
+  display: block;
+  max-width: 100%;
+  margin-top: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .mission-badge {
   display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
   margin-bottom: 10px;
   padding: 5px 10px;
   border: 1px solid rgba(255, 208, 0, 0.34);
@@ -563,25 +605,64 @@ button:hover,
 }
 
 .command-item .actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .command-item .actions button {
   max-width: 100%;
   white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {
+  .page {
+    width: calc(100% - 18px);
+  }
+
+  .command-form {
+    padding: 16px;
+  }
+
+  .commands-list {
+    width: 100%;
+  }
+
   .command-item {
+    width: 100%;
     padding: 14px;
+    border-radius: 18px;
+  }
+
+  .command-item p {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .command-item a {
+    display: inline;
+    word-break: break-all;
   }
 
   .command-item .actions {
     display: grid;
     grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .command-item .actions button {
     width: 100%;
+  }
+
+  .terminal-top {
+    overflow: hidden;
+  }
+
+  .terminal-top p {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
