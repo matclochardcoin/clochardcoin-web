@@ -63,6 +63,10 @@ function init() {
     lastSignal: $("lastSignal"),
     dailyObjective: $("dailyObjective"),
 
+    memoryReportsCount: $("memoryReportsCount"),
+    memorySignalsCount: $("memorySignalsCount"),
+    memoryCompletedCount: $("memoryCompletedCount"),
+
     instagramFollowers: $("instagramFollowers"),
     telegramUsers: $("telegramUsers"),
     tiktokFollowers: $("tiktokFollowers"),
@@ -131,12 +135,14 @@ function printBootSequence() {
 
   typeLine(nowLabel(), "BOOT", "MAT CLOCHARD LIVE NODE ONLINE.");
   typeLine(nowLabel(), "SYSTEM", "Sistema missioni attivo. Mat resta in ascolto della community.");
+  typeLine(nowLabel(), "MEMORY", "Ogni missione completata aumenta la memoria di Mat.");
   typeLine(nowLabel(), "MISSION", "In attesa del prossimo comando approvato.");
 }
 
 async function refreshLiveData(firstLoad = false) {
   await loadConfigFromSupabase();
   await updateCommunityStats();
+  await updateMemoryStats();
   applyConfig();
 
   if (firstLoad || config.dailyObjective !== lastMissionText) {
@@ -258,6 +264,49 @@ async function updateCommunityStats() {
     config.lastSignal = clean(latest.nickname) || "NODE";
   } else {
     config.lastSignal = "IN ASCOLTO";
+  }
+}
+
+async function updateMemoryStats() {
+  const totalReports = await countRows(REPORTS_TABLE);
+  const totalSignals = await countRows(COMMANDS_TABLE);
+  const totalCompleted = await countRows(COMMANDS_TABLE, "status=eq.completed");
+
+  setText(el.memoryReportsCount, totalReports);
+  setText(el.memorySignalsCount, totalSignals);
+  setText(el.memoryCompletedCount, totalCompleted);
+}
+
+async function countRows(tableName, filter = "") {
+  try {
+    let url = `${SUPABASE_URL}/rest/v1/${tableName}?select=id`;
+
+    if (filter) {
+      url += `&${filter}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: supabaseHeaders({
+        Prefer: "count=exact"
+      }),
+      cache: "no-store"
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const contentRange = response.headers.get("content-range");
+
+    if (contentRange && contentRange.includes("/")) {
+      const count = Number(contentRange.split("/")[1]);
+      return Number.isNaN(count) ? 0 : count;
+    }
+
+    const rows = await response.json();
+    return Array.isArray(rows) ? rows.length : 0;
+  } catch (error) {
+    console.warn(`Errore conteggio ${tableName}:`, error);
+    return 0;
   }
 }
 
@@ -383,6 +432,7 @@ async function loadArchiveFromSupabase() {
 
     printNewReportsInTerminal(currentReports);
     renderArchive(currentReports);
+    await updateMemoryStats();
   } catch (error) {
     console.warn("Errore archivio report:", error);
 
