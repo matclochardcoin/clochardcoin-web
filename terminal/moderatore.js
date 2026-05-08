@@ -18,6 +18,7 @@ const refreshBtn = $("refreshBtn");
 const saveLiveConfigBtn = $("saveLiveConfigBtn");
 const saveArchiveBtn = $("saveArchiveBtn");
 const moderationList = $("moderationList");
+const missionFilter = $("missionFilter");
 const toast = $("toast");
 
 const matStatus = $("matStatus");
@@ -64,9 +65,7 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
 
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 2600);
+  setTimeout(() => toast.classList.remove("show"), 2600);
 }
 
 function escapeHtml(value) {
@@ -129,10 +128,7 @@ function getLogText(value) {
 async function loadLiveConfig() {
   try {
     const url =
-      `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}` +
-      `?select=*` +
-      `&id=eq.${CONFIG_ID}` +
-      `&limit=1`;
+      `${SUPABASE_URL}/rest/v1/${CONFIG_TABLE}?select=*&id=eq.${CONFIG_ID}&limit=1`;
 
     const response = await fetch(url, {
       headers: supabaseHeaders(),
@@ -148,7 +144,6 @@ async function loadLiveConfig() {
       if (liveDate) liveDate.value = todayIsoDate();
       if (matStatus) matStatus.value = "ONLINE";
       if (matEnergy) matEnergy.value = 21;
-
       showToast("Config non trovata. Verrà creata al primo salvataggio.");
       return;
     }
@@ -169,8 +164,8 @@ async function loadLiveConfig() {
     if (instagramLink) instagramLink.value = config.instagram_link || "https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr";
     if (telegramLink) telegramLink.value = config.telegram_link || "https://t.me/+2WX7IXU1CzBlNzc0";
     if (tiktokLink) tiktokLink.value = config.tiktok_link || "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT";
-    if (terminalLink) terminalLink.value = config.terminal_link || "https://terminal.clochardcoin.it";
-    if (liveLink) liveLink.value = config.live_link || "https://live.clochardcoin.it";
+    if (terminalLink) terminalLink.value = config.terminal_link || "https://www.clochardcoin.it/terminal/";
+    if (liveLink) liveLink.value = config.live_link || "https://www.clochardcoin.it/live/";
 
     const logs = config.scheduled_logs || {};
 
@@ -204,8 +199,8 @@ async function saveLiveConfig() {
     instagram_link: textValue(instagramLink),
     telegram_link: textValue(telegramLink),
     tiktok_link: textValue(tiktokLink),
-    terminal_link: textValue(terminalLink),
-    live_link: textValue(liveLink),
+    terminal_link: textValue(terminalLink, "https://www.clochardcoin.it/terminal/"),
+    live_link: textValue(liveLink, "https://www.clochardcoin.it/live/"),
     scheduled_logs: getScheduledLogsPayload(),
     signal_status: "LIVE",
     updated_at: new Date().toISOString()
@@ -266,20 +261,25 @@ async function saveArchive() {
 async function loadCommands() {
   if (!moderationList) return;
 
+  const filter = missionFilter?.value || "pending";
+
   moderationList.innerHTML = `
     <div class="command-item">
       <strong>Caricamento...</strong>
-      <p>Sto leggendo le missioni pending.</p>
+      <p>Sto leggendo le missioni ${escapeHtml(filter)}.</p>
     </div>
   `;
 
   try {
-    const url =
+    let url =
       `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}` +
-      `?select=id,nickname,command,status,created_at` +
-      `&status=eq.pending` +
-      `&order=created_at.desc` +
-      `&limit=50`;
+      `?select=id,nickname,command,status,created_at`;
+
+    if (filter !== "all") {
+      url += `&status=eq.${encodeURIComponent(filter)}`;
+    }
+
+    url += `&order=created_at.desc&limit=80`;
 
     const response = await fetch(url, {
       headers: supabaseHeaders(),
@@ -310,8 +310,8 @@ function renderCommands(commands) {
   if (!commands.length) {
     moderationList.innerHTML = `
       <div class="command-item">
-        <strong>Nessuna missione pending</strong>
-        <p>Quando gli utenti inviano nuovi comandi, appariranno qui.</p>
+        <strong>Nessuna missione trovata</strong>
+        <p>Cambia filtro o attendi nuovi segnali dalla community.</p>
       </div>
     `;
     return;
@@ -327,7 +327,12 @@ function renderCommands(commands) {
       <small>${escapeHtml(item.created_at)} · stato: ${escapeHtml(item.status)}</small>
 
       <div class="actions" style="justify-content:flex-start;margin:12px 0 0;">
-        <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">Approva missione</button>
+        <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">Approva</button>
+        <button type="button" data-action="approve_live" data-id="${escapeHtml(item.id)}" data-command="${escapeHtml(item.command)}">Approva + live</button>
+        <button type="button" data-action="use_mission" data-command="${escapeHtml(item.command)}">Usa come missione</button>
+        <button type="button" data-action="add_log12" data-command="${escapeHtml(item.command)}">Log 12</button>
+        <button type="button" data-action="add_log15" data-command="${escapeHtml(item.command)}">Log 15</button>
+        <button type="button" data-action="add_log18" data-command="${escapeHtml(item.command)}">Log 18</button>
         <button type="button" data-action="rejected" data-id="${escapeHtml(item.id)}">Rifiuta</button>
       </div>
     `;
@@ -342,9 +347,7 @@ async function updateStatus(id, status) {
       `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}?id=eq.${encodeURIComponent(id)}`,
       {
         method: "PATCH",
-        headers: supabaseHeaders({
-          Prefer: "return=minimal"
-        }),
+        headers: supabaseHeaders({ Prefer: "return=minimal" }),
         body: JSON.stringify({ status })
       }
     );
@@ -357,6 +360,37 @@ async function updateStatus(id, status) {
     console.error(error);
     showToast("Errore aggiornamento missione.");
   }
+}
+
+function appendToLog(textarea, command, prefix) {
+  if (!textarea) return;
+
+  const line = `${prefix}: ${command}`;
+  const current = textarea.value.trim();
+
+  textarea.value = current ? `${current}\n${line}` : line;
+  showToast("Missione aggiunta al log. Premi Salva cervello live.");
+}
+
+function useAsMission(command) {
+  if (!dailyObjective) return;
+
+  dailyObjective.value = command;
+  if (matStatus) matStatus.value = "SCANNING";
+
+  showToast("Missione impostata. Premi Salva cervello live.");
+}
+
+async function approveAndSendLive(id, command) {
+  await updateStatus(id, "approved");
+  useAsMission(command);
+
+  if (log09) {
+    appendToLog(log09, command, "Segnale community approvato");
+  }
+
+  await saveLiveConfig();
+  showToast("Missione approvata e inviata alla live.");
 }
 
 if (loginBtn) {
@@ -381,24 +415,48 @@ if (logoutBtn) {
   });
 }
 
-if (refreshBtn) {
-  refreshBtn.addEventListener("click", loadCommands);
-}
-
-if (saveLiveConfigBtn) {
-  saveLiveConfigBtn.addEventListener("click", saveLiveConfig);
-}
-
-if (saveArchiveBtn) {
-  saveArchiveBtn.addEventListener("click", saveArchive);
-}
+if (refreshBtn) refreshBtn.addEventListener("click", loadCommands);
+if (missionFilter) missionFilter.addEventListener("change", loadCommands);
+if (saveLiveConfigBtn) saveLiveConfigBtn.addEventListener("click", saveLiveConfig);
+if (saveArchiveBtn) saveArchiveBtn.addEventListener("click", saveArchive);
 
 if (moderationList) {
-  moderationList.addEventListener("click", (event) => {
+  moderationList.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
 
-    updateStatus(button.dataset.id, button.dataset.action);
+    const action = button.dataset.action;
+    const id = button.dataset.id;
+    const command = button.dataset.command || "";
+
+    if (action === "approved" || action === "rejected") {
+      updateStatus(id, action);
+      return;
+    }
+
+    if (action === "approve_live") {
+      approveAndSendLive(id, command);
+      return;
+    }
+
+    if (action === "use_mission") {
+      useAsMission(command);
+      return;
+    }
+
+    if (action === "add_log12") {
+      appendToLog(log12, command, "SCAN community");
+      return;
+    }
+
+    if (action === "add_log15") {
+      appendToLog(log15, command, "Risultato da missione community");
+      return;
+    }
+
+    if (action === "add_log18") {
+      appendToLog(log18, command, "Pensiero Mat sulla missione");
+    }
   });
 }
 
