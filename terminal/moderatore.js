@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYXNlIiwicmVmIjoia3J6aWR1am9lenJmbHJzZmFqeG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3Nzg0NDM4OSwiZXhwIjoyMDkzNDIwMzg5fQ.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
 
 const COMMANDS_TABLE = "mat_commands";
 const CONFIG_TABLE = "mat_live_config";
@@ -64,7 +64,6 @@ function showToast(message) {
 
   toast.textContent = message;
   toast.classList.add("show");
-
   setTimeout(() => toast.classList.remove("show"), 2600);
 }
 
@@ -92,6 +91,16 @@ function numberValue(input, fallback = 0) {
 
 function textValue(input, fallback = "") {
   return String(input?.value || fallback).trim();
+}
+
+function setTextAreaValue(node, value) {
+  if (!node) return;
+  node.value = value || "";
+}
+
+function appendLine(current, line) {
+  const base = String(current || "").trim();
+  return base ? `${base}\n${line}` : line;
 }
 
 function getScheduledLogsPayload() {
@@ -330,6 +339,7 @@ function renderCommands(commands) {
         <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">Approva</button>
         <button type="button" data-action="approve_live" data-id="${escapeHtml(item.id)}" data-command="${escapeHtml(item.command)}">Approva + live</button>
         <button type="button" data-action="use_mission" data-command="${escapeHtml(item.command)}">Usa come missione</button>
+        <button type="button" data-action="auto_logs" data-command="${escapeHtml(item.command)}">Genera log</button>
         <button type="button" data-action="add_log12" data-command="${escapeHtml(item.command)}">Log 12</button>
         <button type="button" data-action="add_log15" data-command="${escapeHtml(item.command)}">Log 15</button>
         <button type="button" data-action="add_log18" data-command="${escapeHtml(item.command)}">Log 18</button>
@@ -341,7 +351,7 @@ function renderCommands(commands) {
   });
 }
 
-async function updateStatus(id, status) {
+async function updateStatus(id, status, shouldReload = true) {
   try {
     const response = await fetch(
       `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}?id=eq.${encodeURIComponent(id)}`,
@@ -355,7 +365,8 @@ async function updateStatus(id, status) {
     if (!response.ok) throw new Error(await response.text());
 
     showToast(status === "approved" ? "Missione approvata." : "Missione rifiutata.");
-    loadCommands();
+
+    if (shouldReload) loadCommands();
   } catch (error) {
     console.error(error);
     showToast("Errore aggiornamento missione.");
@@ -365,10 +376,7 @@ async function updateStatus(id, status) {
 function appendToLog(textarea, command, prefix) {
   if (!textarea) return;
 
-  const line = `${prefix}: ${command}`;
-  const current = textarea.value.trim();
-
-  textarea.value = current ? `${current}\n${line}` : line;
+  textarea.value = appendLine(textarea.value, `${prefix}: ${command}`);
   showToast("Missione aggiunta al log. Premi Salva cervello live.");
 }
 
@@ -376,21 +384,71 @@ function useAsMission(command) {
   if (!dailyObjective) return;
 
   dailyObjective.value = command;
+
   if (matStatus) matStatus.value = "SCANNING";
+
+  const currentEnergy = numberValue(matEnergy, 21);
+  if (matEnergy) matEnergy.value = Math.max(5, currentEnergy - 3);
 
   showToast("Missione impostata. Premi Salva cervello live.");
 }
 
-async function approveAndSendLive(id, command) {
-  await updateStatus(id, "approved");
-  useAsMission(command);
+function generateLogsFromMission(command) {
+  const mission = String(command || "").trim();
 
-  if (log09) {
-    appendToLog(log09, command, "Segnale community approvato");
+  if (!mission) {
+    showToast("Missione vuota.");
+    return;
   }
 
+  if (log09) {
+    setTextAreaValue(
+      log09,
+      `Segnale community approvato. Mat riceve una nuova missione: "${mission}".`
+    );
+  }
+
+  if (log12) {
+    setTextAreaValue(
+      log12,
+      `SCAN operativo avviato. Mat divide la missione in fonti, segnali e possibili risultati verificabili.`
+    );
+  }
+
+  if (log15) {
+    setTextAreaValue(
+      log15,
+      `Primo risultato parziale. Mat organizza ciò che ha trovato e separa dati utili, rumore e piste da verificare.`
+    );
+  }
+
+  if (log18) {
+    setTextAreaValue(
+      log18,
+      `Mat riflette sulla missione: non basta trovare risposte veloci, serve capire cosa è davvero utile alla community.`
+    );
+  }
+
+  if (log20) {
+    setTextAreaValue(
+      log20,
+      `REPORT finale. Missione analizzata: "${mission}". I segnali utili vengono salvati nella memoria di Mat e preparati per il prossimo ciclo.`
+    );
+  }
+
+  showToast("Log automatici generati. Premi Salva cervello live.");
+}
+
+async function approveAndSendLive(id, command) {
+  await updateStatus(id, "approved", false);
+
+  useAsMission(command);
+  generateLogsFromMission(command);
+
   await saveLiveConfig();
-  showToast("Missione approvata e inviata alla live.");
+  await loadCommands();
+
+  showToast("Missione approvata, log generati e live aggiornata.");
 }
 
 if (loginBtn) {
@@ -441,6 +499,11 @@ if (moderationList) {
 
     if (action === "use_mission") {
       useAsMission(command);
+      return;
+    }
+
+    if (action === "auto_logs") {
+      generateLogsFromMission(command);
       return;
     }
 
