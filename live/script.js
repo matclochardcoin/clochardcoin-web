@@ -23,8 +23,8 @@ const fallbackConfig = {
     instagram: "https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr",
     telegram: "https://t.me/+2WX7IXU1CzBlNzc0",
     tiktok: "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT",
-    terminal: "https://terminal.clochardcoin.it",
-    live: "https://live.clochardcoin.it"
+    terminal: "https://www.clochardcoin.it/terminal/",
+    live: "https://www.clochardcoin.it/live/"
   },
   logs: {
     "06": "",
@@ -36,7 +36,7 @@ const fallbackConfig = {
   }
 };
 
-let config = structuredClone(fallbackConfig);
+let config = JSON.parse(JSON.stringify(fallbackConfig));
 let audioEnabled = false;
 let terminalQueue = Promise.resolve();
 let communityInterval = null;
@@ -80,6 +80,7 @@ function init() {
     archiveList: $("archiveList")
   };
 
+  applyConfig();
   setupButtons();
   setupMatFallback();
   startLive();
@@ -100,24 +101,14 @@ async function startLive() {
   typeLine(nowLabel(), "SYSTEM", "Modalità ecosistema attiva.");
   typeLine(nowLabel(), "SIGNAL", "Mat resta in ascolto dei segnali community.");
 
-  await loadConfigFromSupabase();
-  await updateCommunityStats();
-
-  applyConfig();
-  printAvailableScheduledLogs();
-  loadArchiveFromSupabase();
+  await refreshLiveData();
 
   clearInterval(configInterval);
   clearInterval(liveSignalInterval);
   clearInterval(communityInterval);
   clearInterval(archiveInterval);
 
-  configInterval = setInterval(async () => {
-    await loadConfigFromSupabase();
-    await updateCommunityStats();
-    applyConfig();
-    printAvailableScheduledLogs();
-  }, 10000);
+  configInterval = setInterval(refreshLiveData, 10000);
 
   liveSignalInterval = setInterval(() => {
     const signals = [
@@ -138,6 +129,14 @@ async function startLive() {
   archiveInterval = setInterval(loadArchiveFromSupabase, 60000);
 
   printCommunitySignal();
+}
+
+async function refreshLiveData() {
+  await loadConfigFromSupabase();
+  await updateCommunityStats();
+  applyConfig();
+  printAvailableScheduledLogs();
+  loadArchiveFromSupabase();
 }
 
 async function loadConfigFromSupabase() {
@@ -161,7 +160,7 @@ async function loadConfigFromSupabase() {
     if (!data) return;
 
     config = {
-      ...structuredClone(fallbackConfig),
+      ...JSON.parse(JSON.stringify(fallbackConfig)),
       liveDate: data.live_date || "",
       dailyObjective: data.daily_objective || fallbackConfig.dailyObjective,
       matStatus: data.mat_status || fallbackConfig.matStatus,
@@ -184,6 +183,7 @@ async function loadConfigFromSupabase() {
     };
   } catch (error) {
     console.warn("Errore config Supabase:", error);
+    typeLine(nowLabel(), "ERROR", "Config Supabase non caricata. Uso fallback locale.");
   }
 }
 
@@ -505,9 +505,7 @@ function clean(value) {
 
 function clampNumber(value, min, max) {
   const number = Number(value);
-
   if (Number.isNaN(number)) return min;
-
   return Math.max(min, Math.min(max, number));
 }
 
