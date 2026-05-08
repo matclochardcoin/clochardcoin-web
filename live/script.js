@@ -510,11 +510,7 @@ function setupArchiveClicks() {
 
     const clickedId = button.dataset.reportId;
 
-    if (String(selectedReportId) === String(clickedId)) {
-      selectedReportId = null;
-    } else {
-      selectedReportId = clickedId;
-    }
+    selectedReportId = String(selectedReportId) === String(clickedId) ? null : clickedId;
 
     renderArchive(currentReports);
   });
@@ -556,17 +552,6 @@ function renderReportViewer(report) {
       <strong>SOLUZIONE DI MAT</strong>
       <p>${linkifyText(report.mat_solution || "Soluzione non disponibile")}</p>
     </div>
-  `;
-}
-
-function renderArchiveLog(label, category, text) {
-  if (!clean(text)) return "";
-
-  return `
-    <p class="archive-log">
-      <span>[${escapeHtml(label)}] [${escapeHtml(category)}]</span>
-      ${escapeHtml(text)}
-    </p>
   `;
 }
 
