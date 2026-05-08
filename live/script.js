@@ -495,7 +495,7 @@ function renderArchive(items) {
         <p class="archive-objective">SOLUZIONE DI MAT</p>
 
         <p class="archive-log">
-          ${escapeHtml(report.mat_solution || "Soluzione non disponibile")}
+          ${linkifyText(report.mat_solution || "Soluzione non disponibile")}
         </p>
 
         <p class="archive-stats">
@@ -615,6 +615,15 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function linkifyText(value) {
+  const escaped = escapeHtml(value || "");
+
+  return escaped.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
 }
 
 function showToast(message) {
