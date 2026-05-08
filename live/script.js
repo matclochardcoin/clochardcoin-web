@@ -3,7 +3,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const CONFIG_TABLE = "mat_live_config";
 const COMMANDS_TABLE = "mat_commands";
-const ARCHIVE_TABLE = "mat_live_archive";
+const REPORTS_TABLE = "mat_reports_archive";
 const CONFIG_ID = 1;
 
 const fallbackConfig = {
@@ -91,11 +91,12 @@ function init() {
   startLive();
 }
 
-function supabaseHeaders() {
+function supabaseHeaders(extra = {}) {
   return {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    ...extra
   };
 }
 
@@ -298,6 +299,11 @@ function printMissionPulse() {
       `Preparazione riepilogo missione: ${mission}`,
       "Memoria del giorno in aggiornamento."
     ],
+    COMPLETED: [
+      "Missione completata. Report salvato nella memoria di Mat.",
+      `Soluzione pubblicata per la missione: ${mission}`,
+      "Mat torna in ascolto del prossimo comando."
+    ],
     ALERT: [
       "Anomalia rilevata. Mat rallenta la scansione.",
       "Segnale instabile. Serve verifica manuale dal moderatore.",
@@ -412,11 +418,15 @@ async function printNewCommunitySignals() {
 
     const nickname = clean(item.nickname) || "utente_anonimo";
     config.lastSignal = nickname;
-    config.matMode = "ANALYZING";
+
+    if (config.matMode === "IDLE") {
+      config.matMode = "ANALYZING";
+    }
+
     applyConfig();
 
     typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
-    typeLine(nowLabel(), "MAT", "Segnale approvato. Analisi temporanea avviata.");
+    typeLine(nowLabel(), "MAT", "Segnale approvato. Mat lo registra nella memoria temporanea.");
   });
 }
 
@@ -425,9 +435,9 @@ async function loadArchiveFromSupabase() {
 
   try {
     const query =
-      `${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}` +
-      `?select=archive_date,live_date,daily_objective,instagram_followers,telegram_followers,tiktok_followers,scheduled_logs,created_at` +
-      `&order=archive_date.desc` +
+      `${SUPABASE_URL}/rest/v1/${REPORTS_TABLE}` +
+      `?select=id,created_at,command_id,nickname,command,mat_solution,mat_status,mat_mode,mat_energy` +
+      `&order=created_at.desc` +
       `&limit=20`;
 
     const response = await fetch(query, {
@@ -437,14 +447,14 @@ async function loadArchiveFromSupabase() {
 
     if (!response.ok) throw new Error(await response.text());
 
-    const archiveItems = await response.json();
-    renderArchive(archiveItems);
+    const reports = await response.json();
+    renderArchive(reports);
   } catch (error) {
-    console.warn("Errore archivio Supabase:", error);
+    console.warn("Errore archivio report:", error);
 
     el.archiveList.innerHTML = `
       <div class="archive-empty">
-        Archivio non disponibile. Controlla la tabella mat_live_archive.
+        Archivio report non disponibile. Controlla la tabella mat_reports_archive.
       </div>
     `;
   }
@@ -456,7 +466,7 @@ function renderArchive(items) {
   if (!items.length) {
     el.archiveList.innerHTML = `
       <div class="archive-empty">
-        Archivio in attesa dei primi salvataggi dal pannello moderatore.
+        Nessun report completato. Quando Mat pubblica una soluzione, apparirà qui.
       </div>
     `;
     return;
@@ -464,33 +474,35 @@ function renderArchive(items) {
 
   el.archiveList.innerHTML = "";
 
-  items.forEach((day) => {
+  items.forEach((report) => {
     const details = document.createElement("details");
     details.className = "archive-day";
 
-    const logs = normalizeLogs(day.scheduled_logs || {});
-    const date = day.live_date || day.archive_date;
+    const date = formatDateTimeIt(report.created_at);
 
     details.innerHTML = `
-      <summary>${formatDateIt(date)}</summary>
+      <summary>
+        ${escapeHtml(date)} · @${escapeHtml(report.nickname || "utente_anonimo")}
+      </summary>
 
       <div class="archive-day-content">
-        <p class="archive-objective">
-          ${escapeHtml(day.daily_objective || "Missione non disponibile")}
+        <p class="archive-objective">COMANDO</p>
+
+        <p class="archive-log">
+          ${escapeHtml(report.command || "Comando non disponibile")}
+        </p>
+
+        <p class="archive-objective">SOLUZIONE DI MAT</p>
+
+        <p class="archive-log">
+          ${escapeHtml(report.mat_solution || "Soluzione non disponibile")}
         </p>
 
         <p class="archive-stats">
-          Instagram: ${escapeHtml(day.instagram_followers ?? 0)} ·
-          Telegram: ${escapeHtml(day.telegram_followers ?? 0)} ·
-          TikTok: ${escapeHtml(day.tiktok_followers ?? 0)}
+          Stato: ${escapeHtml(report.mat_status || "ONLINE")} ·
+          Modalità: ${escapeHtml(report.mat_mode || "COMPLETED")} ·
+          Energia: ${escapeHtml(report.mat_energy ?? 0)}%
         </p>
-
-        ${renderArchiveLog("06:00", "BOOT", logs["06"])}
-        ${renderArchiveLog("09:00", "USER_SIGNAL", logs["09"])}
-        ${renderArchiveLog("12:00", "SCAN", logs["12"])}
-        ${renderArchiveLog("15:00", "RESULT", logs["15"])}
-        ${renderArchiveLog("18:00", "MAT", logs["18"])}
-        ${renderArchiveLog("20:00", "REPORT", logs["20"])}
       </div>
     `;
 
@@ -517,6 +529,22 @@ function formatDateIt(value) {
   if (!year || !month || !day) return escapeHtml(value);
 
   return `${day}/${month}/${year}`;
+}
+
+function formatDateTimeIt(value) {
+  if (!value) return "Data non disponibile";
+
+  try {
+    return new Date(value).toLocaleString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } catch {
+    return String(value);
+  }
 }
 
 function typeLine(label, category, text) {
