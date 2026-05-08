@@ -453,3 +453,51 @@ button:hover,
   border: 0;
   border-top: 1px solid rgba(255, 208, 0, 0.25);
 }
+/* TERMINALE MISSIONI */
+
+.mission-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.mission-status-card {
+  min-height: 104px;
+  padding: 14px;
+  border: 1px solid var(--border-yellow);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 208, 0, 0.08), transparent 44%),
+    var(--panel);
+  text-align: center;
+  display: grid;
+  align-content: center;
+}
+
+.mission-status-card span {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.mission-status-card strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--yellow);
+  font-size: clamp(24px, 5vw, 36px);
+  line-height: 1;
+}
+
+.mission-status-card small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .mission-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
