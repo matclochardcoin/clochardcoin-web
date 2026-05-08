@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Moderatore Mat Clochard</title>
+  <title>Cervello Mat Clochard</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 
@@ -14,77 +14,108 @@
   <main class="page">
     <header class="hero">
       <p class="domain">terminal.clochardcoin.it/moderatore</p>
-      <h1>MODERATORE MAT</h1>
-      <p class="subtitle">Gestisci la live, programma i log e modera i comandi della community.</p>
+      <h1>CERVELLO DI MAT</h1>
+      <p class="subtitle">Gestisci missione, energia, log, archivio e segnali community.</p>
     </header>
 
     <section class="terminal-card">
       <div class="terminal-top">
         <div class="dots"><span></span><span></span><span></span></div>
-        <p>/mat_clochard/control_panel</p>
+        <p>/mat_clochard/brain_panel</p>
       </div>
 
       <div class="command-form" id="loginBox">
         <label for="adminPassword">Password moderatore</label>
         <input id="adminPassword" type="password" placeholder="Inserisci password" />
         <button id="loginBtn" type="button">Entra</button>
-
-        <p class="local-note">
-          Pannello riservato alla gestione della live ClochardCoin.
-        </p>
+        <p class="local-note">Pannello riservato al controllo operativo di Mat.</p>
       </div>
 
       <div class="command-form hidden" id="moderationBox">
-        <h2>Config live</h2>
+        <h2>Stato ecosistema</h2>
+
+        <label for="matStatus">Status Mat</label>
+        <input id="matStatus" type="text" placeholder="ONLINE" />
+
+        <label for="matEnergy">Energia Mat %</label>
+        <input id="matEnergy" type="number" min="0" max="100" placeholder="21" />
 
         <label for="liveDate">Data live programmata</label>
         <input id="liveDate" type="date" />
 
-        <label for="dailyObjective">Obiettivo del giorno</label>
-        <input id="dailyObjective" type="text" placeholder="Es. Continuare a costruire" />
+        <label for="dailyObjective">Missione attiva</label>
+        <input id="dailyObjective" type="text" placeholder="Es. trovare opportunità reali per la community" />
+
+        <h2>Metriche social</h2>
 
         <label for="instagramFollowers">Follower Instagram</label>
-        <input id="instagramFollowers" type="number" placeholder="141" />
+        <input id="instagramFollowers" type="number" />
 
         <label for="telegramFollowers">Follower Telegram</label>
-        <input id="telegramFollowers" type="number" placeholder="7" />
+        <input id="telegramFollowers" type="number" />
 
         <label for="tiktokFollowers">Follower TikTok</label>
-        <input id="tiktokFollowers" type="number" placeholder="3" />
+        <input id="tiktokFollowers" type="number" />
+
+        <label for="youtubeStatus">Status YouTube</label>
+        <input id="youtubeStatus" type="text" placeholder="A BREVE" />
+
+        <h2>Wallet / ricarica Mat</h2>
+
+        <label for="solanaWallet">Wallet Solana</label>
+        <input id="solanaWallet" type="text" />
+
+        <label for="minimumDonation">Ricarica minima</label>
+        <input id="minimumDonation" type="text" placeholder="0.01 SOL" />
+
+        <h2>Link ecosistema</h2>
+
+        <label for="instagramLink">Instagram link</label>
+        <input id="instagramLink" type="url" />
+
+        <label for="telegramLink">Telegram link</label>
+        <input id="telegramLink" type="url" />
+
+        <label for="tiktokLink">TikTok link</label>
+        <input id="tiktokLink" type="url" />
+
+        <label for="terminalLink">Terminale link</label>
+        <input id="terminalLink" type="url" />
+
+        <label for="liveLink">Live link</label>
+        <input id="liveLink" type="url" />
 
         <h2>Log programmati</h2>
 
-        <label for="log06">Log ore 06</label>
+        <label for="log06">06 BOOT</label>
         <textarea id="log06" rows="3"></textarea>
 
-        <label for="log09">Log ore 09</label>
+        <label for="log09">09 USER_SIGNAL</label>
         <textarea id="log09" rows="3"></textarea>
 
-        <label for="log12">Log ore 12</label>
+        <label for="log12">12 SCAN</label>
         <textarea id="log12" rows="3"></textarea>
 
-        <label for="log15">Log ore 15</label>
+        <label for="log15">15 RESULT</label>
         <textarea id="log15" rows="3"></textarea>
 
-        <label for="log18">Log ore 18</label>
+        <label for="log18">18 MAT</label>
         <textarea id="log18" rows="3"></textarea>
 
-        <label for="log20">Log ore 20</label>
+        <label for="log20">20 REPORT</label>
         <textarea id="log20" rows="3"></textarea>
 
-        <button id="saveLiveConfigBtn" type="button">
-          Salva configurazione live
-        </button>
+        <button id="saveLiveConfigBtn" type="button">Salva cervello live</button>
 
-        <button id="saveArchiveBtn" type="button" style="margin-top:10px;background:#e6b800;color:black;">
-          Salva giornata in archivio
+        <button id="saveArchiveBtn" type="button" class="gold-btn">
+          Salva giornata nella memoria
         </button>
 
         <hr />
 
-        <h2>Comandi utenti</h2>
+        <h2>Missioni community</h2>
 
-        <button id="refreshBtn" type="button">Aggiorna comandi</button>
+        <button id="refreshBtn" type="button">Aggiorna missioni</button>
         <button id="logoutBtn" type="button">Esci</button>
 
         <div id="moderationList" class="commands-list"></div>
@@ -99,6 +130,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./moderatore.js?v=5"></script>
+  <script src="./moderatore.js?v=20"></script>
 </body>
 </html>
