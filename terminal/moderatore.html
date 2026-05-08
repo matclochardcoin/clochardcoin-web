@@ -115,10 +115,20 @@
 
         <h2>Missioni community</h2>
 
-        <button id="refreshBtn" type="button">Aggiorna missioni</button>
-        <button id="logoutBtn" type="button">Esci</button>
+<label for="missionFilter">Filtro missioni</label>
+<select id="missionFilter">
+  <option value="pending">Pending</option>
+  <option value="approved">Approved</option>
+  <option value="rejected">Rejected</option>
+  <option value="all">Tutte</option>
+</select>
 
-        <div id="moderationList" class="commands-list"></div>
+<div class="actions" style="justify-content:flex-start;margin:14px 0;">
+  <button id="refreshBtn" type="button">Aggiorna missioni</button>
+  <button id="logoutBtn" type="button">Esci</button>
+</div>
+
+<div id="moderationList" class="commands-list"></div>
       </div>
     </section>
 
@@ -130,6 +140,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./moderatore.js?v=22"></script>
+  <script src="./moderatore.js?v=23"></script>
 </body>
 </html>
