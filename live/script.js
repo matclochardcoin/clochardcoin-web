@@ -8,7 +8,7 @@ const CONFIG_ID = 1;
 
 const fallbackConfig = {
   liveDate: "",
-  dailyObjective: "In attesa della missione del giorno",
+  dailyObjective: "In attesa del prossimo comando",
   matStatus: "ONLINE",
   matMode: "IDLE",
   matEnergy: 21,
@@ -26,29 +26,25 @@ const fallbackConfig = {
     tiktok: "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT",
     terminal: "https://www.clochardcoin.it/terminal/",
     live: "https://www.clochardcoin.it/live/"
-  },
-  logs: {
-    "06": "",
-    "09": "",
-    "12": "",
-    "15": "",
-    "18": "",
-    "20": ""
   }
 };
 
 let config = JSON.parse(JSON.stringify(fallbackConfig));
 let audioEnabled = false;
 let terminalQueue = Promise.resolve();
+
 let configInterval = null;
 let archiveInterval = null;
 let missionPulseInterval = null;
 let communityInterval = null;
-let printedLogKeys = new Set();
+
 let printedCommandIds = new Set();
+let printedReportIds = new Set();
+
 let lastMissionText = "";
 let lastModeText = "";
 let bootPrinted = false;
+
 let currentReports = [];
 let selectedReportId = null;
 
@@ -66,24 +62,31 @@ function init() {
     communityNodes: $("communityNodes"),
     lastSignal: $("lastSignal"),
     dailyObjective: $("dailyObjective"),
+
     instagramFollowers: $("instagramFollowers"),
     telegramUsers: $("telegramUsers"),
     tiktokFollowers: $("tiktokFollowers"),
     youtubeStatus: $("youtubeStatus"),
+
     solanaWallet: $("solanaWallet"),
     minimumDonation: $("minimumDonation"),
+
     instagramLink: $("instagramLink"),
     telegramLink: $("telegramLink"),
     tiktokLink: $("tiktokLink"),
     terminalLink: $("terminalLink"),
+
     donateBtn: $("donateBtn"),
     copyWalletBtn: $("copyWalletBtn"),
+
     terminal: $("terminal"),
     ambientAudio: $("ambientAudio"),
     toggleAudioBtn: $("toggleAudioBtn"),
     toast: $("toast"),
+
     matVideo: $("matVideo"),
     matPlaceholder: $("matPlaceholder"),
+
     archiveList: $("archiveList"),
     reportViewer: $("reportViewer")
   };
@@ -117,7 +120,7 @@ async function startLive() {
   clearInterval(communityInterval);
 
   configInterval = setInterval(() => refreshLiveData(false), 12000);
-  archiveInterval = setInterval(loadArchiveFromSupabase, 60000);
+  archiveInterval = setInterval(loadArchiveFromSupabase, 30000);
   communityInterval = setInterval(printNewCommunitySignals, 18000);
   missionPulseInterval = setInterval(printMissionPulse, 90000);
 }
@@ -127,8 +130,8 @@ function printBootSequence() {
   bootPrinted = true;
 
   typeLine(nowLabel(), "BOOT", "MAT CLOCHARD LIVE NODE ONLINE.");
-  typeLine(nowLabel(), "SYSTEM", "Canale live sincronizzato con il cervello operativo.");
-  typeLine(nowLabel(), "MISSION", "In attesa della missione attiva.");
+  typeLine(nowLabel(), "SYSTEM", "Sistema missioni attivo. Mat resta in ascolto della community.");
+  typeLine(nowLabel(), "MISSION", "In attesa del prossimo comando approvato.");
 }
 
 async function refreshLiveData(firstLoad = false) {
@@ -138,8 +141,13 @@ async function refreshLiveData(firstLoad = false) {
 
   if (firstLoad || config.dailyObjective !== lastMissionText) {
     lastMissionText = config.dailyObjective;
+
     typeLine(nowLabel(), "MISSION", config.dailyObjective);
-    typeLine(nowLabel(), "STATUS", `Stato: ${config.matStatus} · Modalità: ${config.matMode} · Energia: ${config.matEnergy}%`);
+    typeLine(
+      nowLabel(),
+      "STATUS",
+      `Stato: ${config.matStatus} · Modalità: ${config.matMode} · Energia: ${config.matEnergy}%`
+    );
   }
 
   if (!firstLoad && config.matMode !== lastModeText) {
@@ -148,8 +156,7 @@ async function refreshLiveData(firstLoad = false) {
 
   lastModeText = config.matMode;
 
-  printAvailableScheduledLogs();
-  loadArchiveFromSupabase();
+  await loadArchiveFromSupabase();
 }
 
 async function loadConfigFromSupabase() {
@@ -179,12 +186,15 @@ async function loadConfigFromSupabase() {
       matStatus: data.mat_status || fallbackConfig.matStatus,
       matMode: data.mat_mode || fallbackConfig.matMode,
       matEnergy: data.mat_energy ?? fallbackConfig.matEnergy,
+
       instagramFollowers: data.instagram_followers ?? 0,
       telegramUsers: data.telegram_followers ?? 0,
       tiktokFollowers: data.tiktok_followers ?? 0,
       youtubeStatus: data.youtube_status || fallbackConfig.youtubeStatus,
+
       solanaWallet: data.solana_wallet || fallbackConfig.solanaWallet,
       minimumDonation: data.minimum_donation || fallbackConfig.minimumDonation,
+
       socialLinks: {
         ...fallbackConfig.socialLinks,
         instagram: data.instagram_link || fallbackConfig.socialLinks.instagram,
@@ -192,35 +202,12 @@ async function loadConfigFromSupabase() {
         tiktok: data.tiktok_link || fallbackConfig.socialLinks.tiktok,
         terminal: data.terminal_link || fallbackConfig.socialLinks.terminal,
         live: data.live_link || fallbackConfig.socialLinks.live
-      },
-      logs: normalizeLogs(data.scheduled_logs || fallbackConfig.logs)
+      }
     };
   } catch (error) {
     console.warn("Errore config Supabase:", error);
     typeLine(nowLabel(), "ERROR", "Config Supabase non caricata. Uso fallback locale.");
   }
-}
-
-function normalizeLogs(rawLogs) {
-  const normalized = {};
-
-  ["06", "09", "12", "15", "18", "20"].forEach((hour) => {
-    const value = rawLogs?.[hour];
-
-    if (typeof value === "string") {
-      normalized[hour] = value;
-      return;
-    }
-
-    if (value && typeof value === "object") {
-      normalized[hour] = value.text || "";
-      return;
-    }
-
-    normalized[hour] = "";
-  });
-
-  return normalized;
 }
 
 function applyConfig() {
@@ -232,10 +219,12 @@ function applyConfig() {
   setText(el.communityNodes, config.communityNodes);
   setText(el.lastSignal, config.lastSignal);
   setText(el.dailyObjective, config.dailyObjective);
+
   setText(el.instagramFollowers, config.instagramFollowers);
   setText(el.telegramUsers, config.telegramUsers);
   setText(el.tiktokFollowers, config.tiktokFollowers);
   setText(el.youtubeStatus, config.youtubeStatus);
+
   setText(el.solanaWallet, config.solanaWallet);
   setText(el.minimumDonation, config.minimumDonation);
 
@@ -277,38 +266,38 @@ function printMissionPulse() {
   const mode = clean(config.matMode) || "IDLE";
 
   if (!mission || mission === fallbackConfig.dailyObjective) {
-    typeLine(nowLabel(), "IDLE", "Nessuna missione attiva. Mat resta in ascolto della community.");
+    typeLine(nowLabel(), "IDLE", "Nessuna missione attiva. Mat resta in ascolto.");
     return;
   }
 
   const pulsesByMode = {
     IDLE: [
-      "Nodo in attesa. La missione resta sospesa finché non arrivano nuovi segnali.",
-      `Missione registrata ma non ancora in esecuzione: ${mission}`
+      "Mat è fermo, ma il nodo resta acceso.",
+      "Nessuna esecuzione attiva. In attesa del prossimo comando."
     ],
     SCANNING: [
       `Scansione attiva sulla missione: ${mission}`,
       "Mat raccoglie segnali, filtra rumore e cerca piste verificabili.",
-      "Scansione lenta. Nessun risultato confermato ancora."
+      "Missione in scansione. La risposta non è ancora pronta."
     ],
     ANALYZING: [
       "Analisi in corso. Mat separa fonti utili, segnali deboli e dati sporchi.",
-      `Mat sta valutando la missione: ${mission}`,
-      "Priorità aggiornata. La memoria temporanea sta ordinando i segnali."
+      `Mat sta valutando il comando: ${mission}`,
+      "Memoria temporanea in aggiornamento."
     ],
     EXECUTING: [
-      "Esecuzione missione in corso. Mat prova a trasformare i segnali in azioni.",
-      `Mat lavora sull’obiettivo: ${mission}`,
+      "Esecuzione missione in corso.",
+      `Mat lavora sul comando: ${mission}`,
       "Nodo operativo attivo. Output parziale in preparazione."
     ],
     REPORTING: [
-      "Fase report. Mat sta consolidando risultati e fallimenti della missione.",
-      `Preparazione riepilogo missione: ${mission}`,
-      "Memoria del giorno in aggiornamento."
+      "Fase report. Mat sta consolidando la soluzione.",
+      `Preparazione risposta finale: ${mission}`,
+      "Memoria pubblica pronta per essere aggiornata."
     ],
     COMPLETED: [
       "Missione completata. Report salvato nella memoria di Mat.",
-      `Soluzione pubblicata per la missione: ${mission}`,
+      `Soluzione pubblicata per: ${mission}`,
       "Mat torna in ascolto del prossimo comando."
     ],
     ALERT: [
@@ -320,56 +309,9 @@ function printMissionPulse() {
 
   const pulses = pulsesByMode[mode] || pulsesByMode.SCANNING;
   const index = Math.floor(Math.random() * pulses.length);
+  const category = mode === "IDLE" ? "IDLE" : mode === "COMPLETED" ? "REPORT" : "SCAN";
 
-  typeLine(nowLabel(), mode === "IDLE" ? "IDLE" : "SCAN", pulses[index]);
-}
-
-function printAvailableScheduledLogs() {
-  const liveDate = config.liveDate || todayIsoDate();
-  const today = todayIsoDate();
-
-  if (liveDate > today) {
-    const waitKey = `waiting-${liveDate}`;
-
-    if (!printedLogKeys.has(waitKey)) {
-      printedLogKeys.add(waitKey);
-      typeLine(nowLabel(), "WAIT", `Log programmati per il ${formatDateIt(liveDate)}. Mat resta online in attesa.`);
-    }
-
-    return;
-  }
-
-  if (liveDate < today) return;
-
-  const currentMinutes = getCurrentMinutes();
-  const hours = ["06", "09", "12", "15", "18", "20"];
-
-  hours.forEach((hour) => {
-    const text = clean(config.logs?.[hour]);
-
-    if (!text) return;
-    if (currentMinutes < Number(hour) * 60) return;
-
-    const logKey = `${liveDate}-${hour}-${text}`;
-
-    if (printedLogKeys.has(logKey)) return;
-
-    printedLogKeys.add(logKey);
-    typeLine(`${hour}:00`, getLogCategory(hour), text);
-  });
-}
-
-function getLogCategory(hour) {
-  const categories = {
-    "06": "BOOT",
-    "09": "USER_SIGNAL",
-    "12": "SCAN",
-    "15": "RESULT",
-    "18": "MAT",
-    "20": "REPORT"
-  };
-
-  return categories[hour] || "MAT";
+  typeLine(nowLabel(), category, pulses[index]);
 }
 
 async function fetchCommunityCommands(limit = 5) {
@@ -413,14 +355,10 @@ async function printNewCommunitySignals() {
     const nickname = clean(item.nickname) || "utente_anonimo";
     config.lastSignal = nickname;
 
-    if (config.matMode === "IDLE") {
-      config.matMode = "ANALYZING";
-    }
-
     applyConfig();
 
     typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
-    typeLine(nowLabel(), "MAT", "Segnale approvato. Mat lo registra nella memoria temporanea.");
+    typeLine(nowLabel(), "MAT", "Comando approvato. Mat lo registra nella memoria temporanea.");
   });
 }
 
@@ -442,6 +380,8 @@ async function loadArchiveFromSupabase() {
     if (!response.ok) throw new Error(await response.text());
 
     currentReports = await response.json();
+
+    printNewReportsInTerminal(currentReports);
     renderArchive(currentReports);
   } catch (error) {
     console.warn("Errore archivio report:", error);
@@ -452,6 +392,25 @@ async function loadArchiveFromSupabase() {
       </div>
     `;
   }
+}
+
+function printNewReportsInTerminal(reports) {
+  if (!Array.isArray(reports) || !reports.length) return;
+
+  reports
+    .slice()
+    .reverse()
+    .forEach((report) => {
+      if (!report?.id || printedReportIds.has(report.id)) return;
+
+      printedReportIds.add(report.id);
+
+      typeLine(
+        nowLabel(),
+        "REPORT",
+        `Report archiviato per @${report.nickname || "utente_anonimo"}: ${shortText(report.mat_solution || "Soluzione completata.", 160)}`
+      );
+    });
 }
 
 function renderArchive(items) {
@@ -509,7 +468,6 @@ function setupArchiveClicks() {
     if (!button) return;
 
     const clickedId = button.dataset.reportId;
-
     selectedReportId = String(selectedReportId) === String(clickedId) ? null : clickedId;
 
     renderArchive(currentReports);
@@ -555,32 +513,6 @@ function renderReportViewer(report) {
   `;
 }
 
-function formatDateIt(value) {
-  if (!value) return "Giorno senza data";
-
-  const [year, month, day] = String(value).split("-");
-
-  if (!year || !month || !day) return escapeHtml(value);
-
-  return `${day}/${month}/${year}`;
-}
-
-function formatDateTimeIt(value) {
-  if (!value) return "Data non disponibile";
-
-  try {
-    return new Date(value).toLocaleString("it-IT", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  } catch {
-    return String(value);
-  }
-}
-
 function typeLine(label, category, text) {
   terminalQueue = terminalQueue.then(() => typeLineInternal(label, category, text));
   return terminalQueue;
@@ -603,7 +535,7 @@ async function typeLineInternal(label, category, text) {
   for (let i = 0; i <= full.length; i++) {
     line.innerHTML = formatLine(full.slice(0, i));
     el.terminal.scrollTop = el.terminal.scrollHeight;
-    await sleep(10 + Math.random() * 12);
+    await sleep(8 + Math.random() * 10);
   }
 
   line.classList.remove("cursor");
@@ -625,16 +557,27 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getCurrentMinutes() {
-  const now = new Date();
-  return now.getHours() * 60 + now.getMinutes();
-}
-
 function nowLabel() {
   return new Date().toLocaleTimeString("it-IT", {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function formatDateTimeIt(value) {
+  if (!value) return "Data non disponibile";
+
+  try {
+    return new Date(value).toLocaleString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } catch {
+    return String(value);
+  }
 }
 
 function shortText(value, max = 90) {
