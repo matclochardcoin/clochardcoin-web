@@ -34,11 +34,12 @@
         <strong id="matStatus">ONLINE</strong>
         <small>nodo live h24</small>
       </div>
-<div class="control-card mode-card">
-  <span>MODALITÀ</span>
-  <strong id="matMode">IDLE</strong>
-  <small>stato operativo</small>
-</div>
+
+      <div class="control-card mode-card">
+        <span>MODALITÀ</span>
+        <strong id="matMode">IDLE</strong>
+        <small>stato operativo</small>
+      </div>
 
       <div class="control-card energy-card">
         <span>ENERGIA</span>
@@ -177,7 +178,7 @@
       </div>
     </details>
 
-    <details class="collapsible-card archive-section">
+    <details class="collapsible-card archive-section" open>
       <summary>
         <span>[+]</span>
         MEMORIA DI MAT
@@ -185,16 +186,31 @@
 
       <div class="collapsible-content">
         <div class="archive-header">
-          <h2>ARCHIVIO MISSIONI</h2>
+          <h2>REPORT ARCHIVIATI</h2>
           <p>
-            Ogni giorno diventa un episodio: missione, segnali, risultati e memoria pubblica.
+            Ogni comando completato diventa memoria: utente, richiesta, soluzione e fonti.
           </p>
         </div>
 
-        <div id="archiveList" class="archive-list">
-          <div class="archive-empty">
-            Archivio in attesa dei primi salvataggi dal pannello moderatore.
+        <div class="report-memory-layout">
+          <div class="report-list-panel">
+            <h3>Missioni completate</h3>
+
+            <div id="archiveList" class="report-list">
+              <div class="archive-empty">
+                Nessun report completato. Quando Mat pubblica una soluzione, apparirà qui.
+              </div>
+            </div>
           </div>
+
+          <article id="reportViewer" class="report-viewer">
+            <span class="report-viewer-kicker">MEMORIA SELEZIONATA</span>
+            <h3>Seleziona un report</h3>
+            <p>
+              Clicca una missione completata dalla lista per leggere il comando,
+              la soluzione di Mat e le fonti collegate.
+            </p>
+          </article>
         </div>
       </div>
     </details>
@@ -225,6 +241,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./script.js?v=210"></script>
+  <script src="./script.js?v=211"></script>
 </body>
 </html>
