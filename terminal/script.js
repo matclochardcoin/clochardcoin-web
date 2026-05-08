@@ -184,23 +184,35 @@ function validateMission(command, missionType) {
   }
 
   if (missionType === "token") {
-    const looksLikeTokenRequest =
-      lower.includes("token") ||
-      lower.includes("contract") ||
-      lower.includes("ca:") ||
-      lower.includes("mint") ||
-      lower.includes("pump.fun") ||
-      lower.includes("dexscreener") ||
-      lower.includes("birdeye") ||
-      lower.includes("solscan") ||
-      lower.includes("address") ||
-      lower.includes("indirizzo") ||
-      /[1-9A-HJ-NP-Za-km-z]{32,44}/.test(command);
 
-    if (!looksLikeTokenRequest) {
-      return "Per verificare un token inserisci nome, contract address o link utile.";
-    }
+  const hasContractAddress =
+    /[1-9A-HJ-NP-Za-km-z]{32,44}/.test(command);
+
+  const hasTokenKeywords =
+    lower.includes("token") ||
+    lower.includes("contract") ||
+    lower.includes("ca:") ||
+    lower.includes("mint") ||
+    lower.includes("pump.fun") ||
+    lower.includes("dexscreener") ||
+    lower.includes("birdeye") ||
+    lower.includes("solscan") ||
+    lower.includes("address") ||
+    lower.includes("indirizzo");
+
+  const hasUrl =
+    lower.includes("https://") ||
+    lower.includes("http://");
+
+  const looksLikeTokenRequest =
+    hasContractAddress ||
+    hasTokenKeywords ||
+    hasUrl;
+
+  if (!looksLikeTokenRequest) {
+    return "Inserisci un contract address o un link valido.";
   }
+}
 
   if (missionType === "news") {
     const looksLikeNewsRequest =
