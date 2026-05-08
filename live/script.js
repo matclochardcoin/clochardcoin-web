@@ -464,12 +464,13 @@ function renderArchive(items) {
       </div>
     `;
 
+    selectedReportId = null;
     renderReportViewer(null);
     return;
   }
 
-  if (!selectedReportId || !items.some((item) => String(item.id) === String(selectedReportId))) {
-    selectedReportId = items[0].id;
+  if (selectedReportId && !items.some((item) => String(item.id) === String(selectedReportId))) {
+    selectedReportId = null;
   }
 
   el.archiveList.innerHTML = "";
@@ -493,8 +494,11 @@ function renderArchive(items) {
     el.archiveList.appendChild(button);
   });
 
-  const selected = items.find((item) => String(item.id) === String(selectedReportId)) || items[0];
-  renderReportViewer(selected);
+  const selected = selectedReportId
+    ? items.find((item) => String(item.id) === String(selectedReportId))
+    : null;
+
+  renderReportViewer(selected || null);
 }
 
 function setupArchiveClicks() {
@@ -504,7 +508,13 @@ function setupArchiveClicks() {
     const button = event.target.closest(".report-list-item");
     if (!button) return;
 
-    selectedReportId = button.dataset.reportId;
+    const clickedId = button.dataset.reportId;
+
+    if (String(selectedReportId) === String(clickedId)) {
+      selectedReportId = null;
+    } else {
+      selectedReportId = clickedId;
+    }
 
     renderArchive(currentReports);
   });
@@ -518,8 +528,8 @@ function renderReportViewer(report) {
       <span class="report-viewer-kicker">MEMORIA SELEZIONATA</span>
       <h3>Seleziona un report</h3>
       <p>
-        Clicca una missione completata dalla lista per leggere il comando,
-        la soluzione di Mat e le fonti collegate.
+        Clicca una missione completata dalla lista per aprire il report.
+        Riclicca la stessa missione per chiuderlo.
       </p>
     `;
     return;
