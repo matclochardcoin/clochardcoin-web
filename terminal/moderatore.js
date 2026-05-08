@@ -22,6 +22,7 @@ const missionFilter = $("missionFilter");
 const toast = $("toast");
 
 const matStatus = $("matStatus");
+const matMode = $("matMode");
 const matEnergy = $("matEnergy");
 const liveDate = $("liveDate");
 const dailyObjective = $("dailyObjective");
@@ -152,12 +153,14 @@ async function loadLiveConfig() {
     if (!config) {
       if (liveDate) liveDate.value = todayIsoDate();
       if (matStatus) matStatus.value = "ONLINE";
+      if (matMode) matMode.value = "IDLE";
       if (matEnergy) matEnergy.value = 21;
       showToast("Config non trovata. Verrà creata al primo salvataggio.");
       return;
     }
 
     if (matStatus) matStatus.value = config.mat_status || "ONLINE";
+    if (matMode) matMode.value = config.mat_mode || "IDLE";
     if (matEnergy) matEnergy.value = config.mat_energy ?? 21;
     if (liveDate) liveDate.value = config.live_date || todayIsoDate();
     if (dailyObjective) dailyObjective.value = config.daily_objective || "";
@@ -198,6 +201,7 @@ async function saveLiveConfig() {
     live_date: selectedDate,
     daily_objective: textValue(dailyObjective),
     mat_status: textValue(matStatus, "ONLINE"),
+    mat_mode: textValue(matMode, "IDLE"),
     mat_energy: Math.max(0, Math.min(100, numberValue(matEnergy, 21))),
     instagram_followers: numberValue(instagramFollowers),
     telegram_followers: numberValue(telegramFollowers),
@@ -385,7 +389,8 @@ function useAsMission(command) {
 
   dailyObjective.value = command;
 
-  if (matStatus) matStatus.value = "SCANNING";
+  if (matStatus) matStatus.value = "ONLINE";
+  if (matMode) matMode.value = "SCANNING";
 
   const currentEnergy = numberValue(matEnergy, 21);
   if (matEnergy) matEnergy.value = Math.max(5, currentEnergy - 3);
