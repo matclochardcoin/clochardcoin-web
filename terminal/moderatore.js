@@ -1,11 +1,13 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
 
 const COMMANDS_TABLE = "mat_commands";
 const CONFIG_TABLE = "mat_live_config";
 const REPORTS_TABLE = "mat_reports_archive";
 const CONFIG_ID = 1;
 const ADMIN_PASSWORD = "MAT2026";
+
+const ACTIVE_COMMAND_KEY = "mat-active-command";
 
 const $ = (id) => document.getElementById(id);
 
@@ -46,15 +48,6 @@ const tiktokLink = $("tiktokLink");
 const terminalLink = $("terminalLink");
 const liveLink = $("liveLink");
 
-const log06 = $("log06");
-const log09 = $("log09");
-const log12 = $("log12");
-const log15 = $("log15");
-const log18 = $("log18");
-const log20 = $("log20");
-
-const ACTIVE_COMMAND_KEY = "mat-active-command";
-
 function supabaseHeaders(extra = {}) {
   return {
     "Content-Type": "application/json",
@@ -88,10 +81,6 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function nowIt() {
-  return new Date().toLocaleString("it-IT");
-}
-
 function getSelectedLiveDate() {
   return liveDate?.value || todayIsoDate();
 }
@@ -103,27 +92,6 @@ function numberValue(input, fallback = 0) {
 
 function textValue(input, fallback = "") {
   return String(input?.value || fallback).trim();
-}
-
-function setTextAreaValue(node, value) {
-  if (!node) return;
-  node.value = value || "";
-}
-
-function appendLine(current, line) {
-  const base = String(current || "").trim();
-  return base ? `${base}\n${line}` : line;
-}
-
-function getScheduledLogsPayload() {
-  return {
-    "06": textValue(log06),
-    "09": textValue(log09),
-    "12": textValue(log12),
-    "15": textValue(log15),
-    "18": textValue(log18),
-    "20": textValue(log20)
-  };
 }
 
 function getActiveCommand() {
@@ -170,13 +138,6 @@ function showModerator() {
   loadCommands();
 }
 
-function getLogText(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "object") return value.text || "";
-  return "";
-}
-
 async function loadLiveConfig() {
   try {
     const url =
@@ -220,15 +181,6 @@ async function loadLiveConfig() {
     if (tiktokLink) tiktokLink.value = config.tiktok_link || "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT";
     if (terminalLink) terminalLink.value = config.terminal_link || "https://www.clochardcoin.it/terminal/";
     if (liveLink) liveLink.value = config.live_link || "https://www.clochardcoin.it/live/";
-
-    const logs = config.scheduled_logs || {};
-
-    if (log06) log06.value = getLogText(logs["06"]);
-    if (log09) log09.value = getLogText(logs["09"]);
-    if (log12) log12.value = getLogText(logs["12"]);
-    if (log15) log15.value = getLogText(logs["15"]);
-    if (log18) log18.value = getLogText(logs["18"]);
-    if (log20) log20.value = getLogText(logs["20"]);
   } catch (error) {
     console.error(error);
     showToast("Errore caricamento cervello live.");
@@ -241,7 +193,7 @@ async function saveLiveConfig() {
   const payload = {
     id: CONFIG_ID,
     live_date: selectedDate,
-    daily_objective: textValue(dailyObjective),
+    daily_objective: textValue(dailyObjective, "In attesa del prossimo comando"),
     mat_status: textValue(matStatus, "ONLINE"),
     mat_mode: textValue(matMode, "IDLE"),
     mat_energy: Math.max(0, Math.min(100, numberValue(matEnergy, 21))),
@@ -256,7 +208,7 @@ async function saveLiveConfig() {
     tiktok_link: textValue(tiktokLink),
     terminal_link: textValue(terminalLink, "https://www.clochardcoin.it/terminal/"),
     live_link: textValue(liveLink, "https://www.clochardcoin.it/live/"),
-    scheduled_logs: getScheduledLogsPayload(),
+    scheduled_logs: {},
     signal_status: "LIVE",
     updated_at: new Date().toISOString()
   };
@@ -272,7 +224,7 @@ async function saveLiveConfig() {
 
     if (!response.ok) throw new Error(await response.text());
 
-    showToast(`Cervello live salvato per il ${selectedDate}.`);
+    showToast("Cervello live salvato.");
   } catch (error) {
     console.error(error);
     showToast("Errore salvataggio. Controlla colonne e policy Supabase.");
@@ -350,7 +302,7 @@ function renderCommands(commands) {
       <div class="actions" style="justify-content:flex-start;margin:12px 0 0;">
         <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">Approva</button>
         <button type="button" data-action="activate_mission" data-id="${escapeHtml(item.id)}" data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}" data-command="${escapeHtml(item.command)}">Attiva Mat</button>
-        <button type="button" data-action="use_mission" data-id="${escapeHtml(item.id)}" data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}" data-command="${escapeHtml(item.command)}">Usa come missione</button>
+        <button type="button" data-action="use_mission" data-id="${escapeHtml(item.id)}" data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}" data-command="${escapeHtml(item.command)}">Usa senza salvare</button>
         <button type="button" data-action="rejected" data-id="${escapeHtml(item.id)}">Rifiuta</button>
       </div>
     `;
@@ -394,18 +346,6 @@ function activateMission(item) {
   const currentEnergy = numberValue(matEnergy, 21);
   if (matEnergy) matEnergy.value = Math.max(5, currentEnergy - 3);
 
-  if (log09) {
-    setTextAreaValue(
-      log09,
-      `MISSIONE RICEVUTA: @${item.nickname} ha dato un comando a Mat: "${item.command}". Mat si attiva e inizia la scansione.`
-    );
-  }
-
-  if (log12) setTextAreaValue(log12, "");
-  if (log15) setTextAreaValue(log15, "");
-  if (log18) setTextAreaValue(log18, "");
-  if (log20) setTextAreaValue(log20, "");
-
   if (matSolution) matSolution.value = "";
 
   showToast("Mat attivato. Ora salva il cervello live.");
@@ -437,16 +377,9 @@ async function publishSolution() {
   if (matStatus) matStatus.value = "ONLINE";
   if (matMode) matMode.value = "COMPLETED";
 
-  const reportText =
-    `SOLUZIONE COMPLETATA per @${active.nickname}: ${solution}`;
-
-  if (log20) {
-    setTextAreaValue(log20, reportText);
-  }
-
   const reportPayload = {
     command_id: Number(active.id),
-    nickname: active.nickname,
+    nickname: active.nickname || "utente_anonimo",
     command: active.command,
     mat_solution: solution,
     mat_status: textValue(matStatus, "ONLINE"),
@@ -466,8 +399,14 @@ async function publishSolution() {
     if (!archiveResponse.ok) throw new Error(await archiveResponse.text());
 
     await updateStatus(active.id, "completed", false);
+
+    if (dailyObjective) dailyObjective.value = "In attesa del prossimo comando";
+    if (matMode) matMode.value = "COMPLETED";
+
     await saveLiveConfig();
     await loadCommands();
+
+    clearActiveCommand();
 
     showToast("Soluzione pubblicata e report archiviato.");
   } catch (error) {
