@@ -36,6 +36,15 @@
 
         <label for="matStatus">Status Mat</label>
         <input id="matStatus" type="text" placeholder="ONLINE" />
+<label for="matMode">Modalità Mat</label>
+<select id="matMode">
+  <option value="IDLE">IDLE</option>
+  <option value="SCANNING">SCANNING</option>
+  <option value="ANALYZING">ANALYZING</option>
+  <option value="EXECUTING">EXECUTING</option>
+  <option value="REPORTING">REPORTING</option>
+  <option value="ALERT">ALERT</option>
+</select>
 
         <label for="matEnergy">Energia Mat %</label>
         <input id="matEnergy" type="number" min="0" max="100" placeholder="21" />
@@ -140,6 +149,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./moderatore.js?v=25"></script>
+  <script src="./moderatore.js?v=26"></script>
 </body>
 </html>
