@@ -501,3 +501,87 @@ button:hover,
     grid-template-columns: 1fr;
   }
 }
+/* FIX MODERATORE OSINT - LINK, BADGE, CARD */
+
+.command-item {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(56, 255, 139, 0.22);
+}
+
+.command-item p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.55;
+}
+
+.command-item a {
+  color: var(--yellow);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.mission-badge {
+  display: inline-flex;
+  margin-bottom: 10px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 208, 0, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 208, 0, 0.08);
+  color: var(--yellow);
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 900;
+}
+
+.command-item.mission-token {
+  border-color: rgba(255, 42, 42, 0.34);
+  background:
+    linear-gradient(90deg, rgba(255, 42, 42, 0.08), rgba(56, 255, 139, 0.035)),
+    rgba(56, 255, 139, 0.045);
+}
+
+.command-item.mission-news {
+  border-color: rgba(56, 255, 139, 0.28);
+  background:
+    linear-gradient(90deg, rgba(56, 255, 139, 0.07), rgba(255, 208, 0, 0.035)),
+    rgba(56, 255, 139, 0.045);
+}
+
+.command-item.mission-token .mission-badge {
+  border-color: rgba(255, 42, 42, 0.52);
+  background: rgba(255, 42, 42, 0.12);
+  color: var(--red);
+}
+
+.command-item.mission-news .mission-badge {
+  border-color: rgba(56, 255, 139, 0.4);
+  background: rgba(56, 255, 139, 0.08);
+  color: var(--green);
+}
+
+.command-item .actions {
+  gap: 8px;
+}
+
+.command-item .actions button {
+  max-width: 100%;
+  white-space: normal;
+}
+
+@media (max-width: 760px) {
+  .command-item {
+    padding: 14px;
+  }
+
+  .command-item .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .command-item .actions button {
+    width: 100%;
+  }
+}
