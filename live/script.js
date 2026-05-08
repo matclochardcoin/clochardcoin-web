@@ -488,8 +488,7 @@ async function typeLineInternal(label, category, text) {
   if (!el.terminal || !clean(text)) return;
 
   const line = document.createElement("p");
-  line.className = "terminal-line cursor";
-
+  line.className = `terminal-line cursor cat-${category}`;
   if (category === "REPORT" || category === "ERROR") {
     line.classList.add("alert");
   }
