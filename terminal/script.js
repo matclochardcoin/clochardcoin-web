@@ -1,5 +1,6 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+
 const COMMANDS_TABLE = "mat_commands";
 
 const commandForm = document.getElementById("commandForm");
@@ -12,8 +13,15 @@ const commandsList = document.getElementById("commandsList");
 const clearLocalBtn = document.getElementById("clearLocalBtn");
 const charCount = document.getElementById("charCount");
 const toast = document.getElementById("toast");
+const pendingCount = document.getElementById("pendingCount");
 
-const LOCAL_KEY = "mat-local-commands";
+const LOCAL_KEY = "mat-local-missions";
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderLocalCommands();
+  updateCharCount();
+  loadPendingCount();
+});
 
 function showToast(message) {
   if (!toast) {
@@ -38,13 +46,25 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function headers() {
+function headers(extra = {}) {
   return {
     "Content-Type": "application/json",
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
-    Prefer: "return=minimal"
+    ...extra
   };
+}
+
+function clean(value) {
+  return String(value || "").trim();
+}
+
+function sanitizeNickname(value) {
+  const raw = clean(value) || "utente_anonimo";
+
+  return raw
+    .replace(/[^a-zA-Z0-9_./-]/g, "_")
+    .slice(0, 24);
 }
 
 function getLocalCommands() {
@@ -61,7 +81,6 @@ function saveLocalCommand(item) {
   commands.unshift(item);
 
   localStorage.setItem(LOCAL_KEY, JSON.stringify(commands.slice(0, 10)));
-
   renderLocalCommands();
 }
 
@@ -73,8 +92,8 @@ function renderLocalCommands() {
   if (!commands.length) {
     commandsList.innerHTML = `
       <div class="command-item">
-        <strong>Nessun comando locale</strong>
-        <p>I comandi inviati da questo dispositivo appariranno qui.</p>
+        <strong>Nessuna missione locale</strong>
+        <p>Le missioni inviate da questo dispositivo appariranno qui.</p>
       </div>
     `;
     return;
@@ -96,14 +115,73 @@ function renderLocalCommands() {
   });
 }
 
+async function loadPendingCount() {
+  if (!pendingCount) return;
+
+  try {
+    const url =
+      `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}` +
+      `?select=id` +
+      `&status=eq.pending`;
+
+    const response = await fetch(url, {
+      headers: headers({
+        Prefer: "count=exact"
+      }),
+      cache: "no-store"
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const contentRange = response.headers.get("content-range");
+    const total = contentRange ? contentRange.split("/")[1] : null;
+
+    pendingCount.textContent = total && total !== "*" ? total : "...";
+  } catch (error) {
+    console.warn("Errore conteggio missioni:", error);
+    pendingCount.textContent = "?";
+  }
+}
+
+function validateMission(command) {
+  if (command.length < 12) {
+    return "Scrivi una missione più chiara.";
+  }
+
+  const blockedWords = [
+    "password",
+    "seed phrase",
+    "private key",
+    "chiave privata",
+    "minaccia",
+    "uccidi",
+    "droga"
+  ];
+
+  const lower = command.toLowerCase();
+
+  if (blockedWords.some((word) => lower.includes(word))) {
+    return "La missione contiene parole non ammesse.";
+  }
+
+  return "";
+}
+
 async function sendCommand(event) {
   event.preventDefault();
 
-  const nickname = nicknameInput.value.trim() || "utente_anonimo";
-  const command = commandInput.value.trim();
+  const nickname = sanitizeNickname(nicknameInput.value);
+  const command = clean(commandInput.value);
 
   if (!command) {
-    showToast("Scrivi un comando per Mat.");
+    showToast("Scrivi una missione per Mat.");
+    return;
+  }
+
+  const validationError = validateMission(command);
+
+  if (validationError) {
+    showToast(validationError);
     return;
   }
 
@@ -113,7 +191,7 @@ async function sendCommand(event) {
   }
 
   submitBtn.disabled = true;
-  submitBtn.textContent = "Invio...";
+  submitBtn.textContent = "Invio missione...";
 
   try {
     const payload = {
@@ -124,13 +202,13 @@ async function sendCommand(event) {
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}`, {
       method: "POST",
-      headers: headers(),
+      headers: headers({
+        Prefer: "return=minimal"
+      }),
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
+    if (!response.ok) throw new Error(await response.text());
 
     saveLocalCommand({
       nickname,
@@ -139,10 +217,7 @@ async function sendCommand(event) {
     });
 
     commandForm.reset();
-
-    if (charCount) {
-      charCount.textContent = "0";
-    }
+    updateCharCount();
 
     if (successBox) {
       successBox.classList.remove("hidden");
@@ -152,28 +227,35 @@ async function sendCommand(event) {
       }, 5000);
     }
 
-    showToast("Comando inviato. Attende moderazione.");
+    showToast("Missione inviata. Attende moderazione.");
+    loadPendingCount();
   } catch (error) {
     console.error(error);
-    showToast("Errore invio comando. Controlla Supabase.");
+    showToast("Errore invio missione. Controlla Supabase.");
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Invia comando";
+    submitBtn.textContent = "Invia missione";
   }
 }
 
-commandInput.addEventListener("input", () => {
-  if (charCount) {
+function updateCharCount() {
+  if (charCount && commandInput) {
     charCount.textContent = commandInput.value.length;
   }
-});
+}
 
-commandForm.addEventListener("submit", sendCommand);
+if (commandInput) {
+  commandInput.addEventListener("input", updateCharCount);
+}
 
-clearLocalBtn.addEventListener("click", () => {
-  localStorage.removeItem(LOCAL_KEY);
-  renderLocalCommands();
-  showToast("Lista locale cancellata.");
-});
+if (commandForm) {
+  commandForm.addEventListener("submit", sendCommand);
+}
 
-renderLocalCommands();
+if (clearLocalBtn) {
+  clearLocalBtn.addEventListener("click", () => {
+    localStorage.removeItem(LOCAL_KEY);
+    renderLocalCommands();
+    showToast("Lista locale cancellata.");
+  });
+}
