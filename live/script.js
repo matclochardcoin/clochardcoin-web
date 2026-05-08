@@ -10,6 +10,7 @@ const fallbackConfig = {
   liveDate: "",
   dailyObjective: "In attesa della missione del giorno",
   matStatus: "ONLINE",
+  matMode: "IDLE",
   matEnergy: 21,
   communityNodes: 0,
   lastSignal: "IN ASCOLTO",
@@ -46,6 +47,7 @@ let communityInterval = null;
 let printedLogKeys = new Set();
 let printedCommandIds = new Set();
 let lastMissionText = "";
+let lastModeText = "";
 let bootPrinted = false;
 
 const $ = (id) => document.getElementById(id);
@@ -56,6 +58,7 @@ document.addEventListener("DOMContentLoaded", init);
 function init() {
   el = {
     matStatus: $("matStatus"),
+    matMode: $("matMode"),
     matEnergy: $("matEnergy"),
     energyBar: $("energyBar"),
     communityNodes: $("communityNodes"),
@@ -134,8 +137,14 @@ async function refreshLiveData(firstLoad = false) {
   if (firstLoad || config.dailyObjective !== lastMissionText) {
     lastMissionText = config.dailyObjective;
     typeLine(nowLabel(), "MISSION", config.dailyObjective);
-    typeLine(nowLabel(), "STATUS", `Stato Mat: ${config.matStatus} · Energia: ${config.matEnergy}%`);
+    typeLine(nowLabel(), "STATUS", `Stato: ${config.matStatus} · Modalità: ${config.matMode} · Energia: ${config.matEnergy}%`);
   }
+
+  if (!firstLoad && config.matMode !== lastModeText) {
+    typeLine(nowLabel(), "STATUS", `Modalità operativa aggiornata: ${config.matMode}`);
+  }
+
+  lastModeText = config.matMode;
 
   printAvailableScheduledLogs();
   loadArchiveFromSupabase();
@@ -166,6 +175,7 @@ async function loadConfigFromSupabase() {
       liveDate: data.live_date || "",
       dailyObjective: data.daily_objective || fallbackConfig.dailyObjective,
       matStatus: data.mat_status || fallbackConfig.matStatus,
+      matMode: data.mat_mode || fallbackConfig.matMode,
       matEnergy: data.mat_energy ?? fallbackConfig.matEnergy,
       instagramFollowers: data.instagram_followers ?? 0,
       telegramUsers: data.telegram_followers ?? 0,
@@ -215,6 +225,7 @@ function applyConfig() {
   const energy = clampNumber(config.matEnergy, 0, 100);
 
   setText(el.matStatus, config.matStatus);
+  setText(el.matMode, config.matMode);
   setText(el.matEnergy, energy);
   setText(el.communityNodes, config.communityNodes);
   setText(el.lastSignal, config.lastSignal);
@@ -255,21 +266,49 @@ async function updateCommunityStats() {
 
 function printMissionPulse() {
   const mission = clean(config.dailyObjective);
+  const mode = clean(config.matMode) || "IDLE";
 
   if (!mission || mission === fallbackConfig.dailyObjective) {
     typeLine(nowLabel(), "IDLE", "Nessuna missione attiva. Mat resta in ascolto della community.");
     return;
   }
 
-  const pulses = [
-    `Missione ancora attiva: ${mission}`,
-    "Scansione lenta. Nessun risultato confermato ancora.",
-    "Mat mantiene il nodo acceso e continua a raccogliere segnali.",
-    "La missione resta aperta. I risultati verranno consolidati nei log programmati."
-  ];
+  const pulsesByMode = {
+    IDLE: [
+      "Nodo in attesa. La missione resta sospesa finché non arrivano nuovi segnali.",
+      `Missione registrata ma non ancora in esecuzione: ${mission}`
+    ],
+    SCANNING: [
+      `Scansione attiva sulla missione: ${mission}`,
+      "Mat raccoglie segnali, filtra rumore e cerca piste verificabili.",
+      "Scansione lenta. Nessun risultato confermato ancora."
+    ],
+    ANALYZING: [
+      "Analisi in corso. Mat separa fonti utili, segnali deboli e dati sporchi.",
+      `Mat sta valutando la missione: ${mission}`,
+      "Priorità aggiornata. La memoria temporanea sta ordinando i segnali."
+    ],
+    EXECUTING: [
+      "Esecuzione missione in corso. Mat prova a trasformare i segnali in azioni.",
+      `Mat lavora sull’obiettivo: ${mission}`,
+      "Nodo operativo attivo. Output parziale in preparazione."
+    ],
+    REPORTING: [
+      "Fase report. Mat sta consolidando risultati e fallimenti della missione.",
+      `Preparazione riepilogo missione: ${mission}`,
+      "Memoria del giorno in aggiornamento."
+    ],
+    ALERT: [
+      "Anomalia rilevata. Mat rallenta la scansione.",
+      "Segnale instabile. Serve verifica manuale dal moderatore.",
+      "Rumore alto. Possibile missione da ripulire."
+    ]
+  };
 
+  const pulses = pulsesByMode[mode] || pulsesByMode.SCANNING;
   const index = Math.floor(Math.random() * pulses.length);
-  typeLine(nowLabel(), "SCAN", pulses[index]);
+
+  typeLine(nowLabel(), mode === "IDLE" ? "IDLE" : "SCAN", pulses[index]);
 }
 
 function todayIsoDate() {
@@ -373,10 +412,11 @@ async function printNewCommunitySignals() {
 
     const nickname = clean(item.nickname) || "utente_anonimo";
     config.lastSignal = nickname;
+    config.matMode = "ANALYZING";
     applyConfig();
 
     typeLine(nowLabel(), "USER_SIGNAL", `@${nickname}: ${item.command}`);
-    typeLine(nowLabel(), "MISSION", "Segnale approvato. Mat lo integra nel percorso live.");
+    typeLine(nowLabel(), "MAT", "Segnale approvato. Analisi temporanea avviata.");
   });
 }
 
@@ -489,6 +529,7 @@ async function typeLineInternal(label, category, text) {
 
   const line = document.createElement("p");
   line.className = `terminal-line cursor cat-${category}`;
+
   if (category === "REPORT" || category === "ERROR") {
     line.classList.add("alert");
   }
