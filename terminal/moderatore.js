@@ -3,7 +3,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const COMMANDS_TABLE = "mat_commands";
 const CONFIG_TABLE = "mat_live_config";
-const ARCHIVE_TABLE = "mat_live_archive";
+const REPORTS_TABLE = "mat_reports_archive";
 const CONFIG_ID = 1;
 const ADMIN_PASSWORD = "MAT2026";
 
@@ -16,7 +16,6 @@ const loginBtn = $("loginBtn");
 const logoutBtn = $("logoutBtn");
 const refreshBtn = $("refreshBtn");
 const saveLiveConfigBtn = $("saveLiveConfigBtn");
-const saveArchiveBtn = $("saveArchiveBtn");
 const moderationList = $("moderationList");
 const missionFilter = $("missionFilter");
 const toast = $("toast");
@@ -26,6 +25,12 @@ const matMode = $("matMode");
 const matEnergy = $("matEnergy");
 const liveDate = $("liveDate");
 const dailyObjective = $("dailyObjective");
+
+const activeCommandId = $("activeCommandId");
+const activeNickname = $("activeNickname");
+const activeCommand = $("activeCommand");
+const matSolution = $("matSolution");
+const publishSolutionBtn = $("publishSolutionBtn");
 
 const instagramFollowers = $("instagramFollowers");
 const telegramFollowers = $("telegramFollowers");
@@ -47,6 +52,8 @@ const log12 = $("log12");
 const log15 = $("log15");
 const log18 = $("log18");
 const log20 = $("log20");
+
+const ACTIVE_COMMAND_KEY = "mat-active-command";
 
 function supabaseHeaders(extra = {}) {
   return {
@@ -79,6 +86,10 @@ function escapeHtml(value) {
 
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function nowIt() {
+  return new Date().toLocaleString("it-IT");
 }
 
 function getSelectedLiveDate() {
@@ -115,6 +126,36 @@ function getScheduledLogsPayload() {
   };
 }
 
+function getActiveCommand() {
+  try {
+    return JSON.parse(localStorage.getItem(ACTIVE_COMMAND_KEY)) || null;
+  } catch {
+    return null;
+  }
+}
+
+function saveActiveCommand(item) {
+  localStorage.setItem(ACTIVE_COMMAND_KEY, JSON.stringify(item));
+  fillActiveCommandFields(item);
+}
+
+function clearActiveCommand() {
+  localStorage.removeItem(ACTIVE_COMMAND_KEY);
+  fillActiveCommandFields(null);
+
+  if (matSolution) matSolution.value = "";
+}
+
+function fillActiveCommandFields(item) {
+  if (activeCommandId) activeCommandId.value = item?.id || "";
+  if (activeNickname) activeNickname.value = item?.nickname || "";
+  if (activeCommand) activeCommand.value = item?.command || "";
+}
+
+function restoreActiveCommand() {
+  fillActiveCommandFields(getActiveCommand());
+}
+
 function showLogin() {
   if (loginBox) loginBox.classList.remove("hidden");
   if (moderationBox) moderationBox.classList.add("hidden");
@@ -124,6 +165,7 @@ function showModerator() {
   if (loginBox) loginBox.classList.add("hidden");
   if (moderationBox) moderationBox.classList.remove("hidden");
 
+  restoreActiveCommand();
   loadLiveConfig();
   loadCommands();
 }
@@ -237,40 +279,6 @@ async function saveLiveConfig() {
   }
 }
 
-async function saveArchive() {
-  const selectedDate = getSelectedLiveDate();
-
-  const payload = {
-    archive_date: selectedDate,
-    live_date: selectedDate,
-    daily_objective: textValue(dailyObjective),
-    instagram_followers: numberValue(instagramFollowers),
-    telegram_followers: numberValue(telegramFollowers),
-    tiktok_followers: numberValue(tiktokFollowers),
-    scheduled_logs: getScheduledLogsPayload()
-  };
-
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}?on_conflict=archive_date`,
-      {
-        method: "POST",
-        headers: supabaseHeaders({
-          Prefer: "resolution=merge-duplicates,return=minimal"
-        }),
-        body: JSON.stringify(payload)
-      }
-    );
-
-    if (!response.ok) throw new Error(await response.text());
-
-    showToast(`Giornata ${selectedDate} salvata nella memoria.`);
-  } catch (error) {
-    console.error(error);
-    showToast("Errore archivio. Controlla mat_live_archive.");
-  }
-}
-
 async function loadCommands() {
   if (!moderationList) return;
 
@@ -341,12 +349,8 @@ function renderCommands(commands) {
 
       <div class="actions" style="justify-content:flex-start;margin:12px 0 0;">
         <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">Approva</button>
-        <button type="button" data-action="approve_live" data-id="${escapeHtml(item.id)}" data-command="${escapeHtml(item.command)}">Approva + live</button>
-        <button type="button" data-action="use_mission" data-command="${escapeHtml(item.command)}">Usa come missione</button>
-        <button type="button" data-action="auto_logs" data-command="${escapeHtml(item.command)}">Genera log</button>
-        <button type="button" data-action="add_log12" data-command="${escapeHtml(item.command)}">Log 12</button>
-        <button type="button" data-action="add_log15" data-command="${escapeHtml(item.command)}">Log 15</button>
-        <button type="button" data-action="add_log18" data-command="${escapeHtml(item.command)}">Log 18</button>
+        <button type="button" data-action="activate_mission" data-id="${escapeHtml(item.id)}" data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}" data-command="${escapeHtml(item.command)}">Attiva Mat</button>
+        <button type="button" data-action="use_mission" data-id="${escapeHtml(item.id)}" data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}" data-command="${escapeHtml(item.command)}">Usa come missione</button>
         <button type="button" data-action="rejected" data-id="${escapeHtml(item.id)}">Rifiuta</button>
       </div>
     `;
@@ -368,8 +372,6 @@ async function updateStatus(id, status, shouldReload = true) {
 
     if (!response.ok) throw new Error(await response.text());
 
-    showToast(status === "approved" ? "Missione approvata." : "Missione rifiutata.");
-
     if (shouldReload) loadCommands();
   } catch (error) {
     console.error(error);
@@ -377,83 +379,101 @@ async function updateStatus(id, status, shouldReload = true) {
   }
 }
 
-function appendToLog(textarea, command, prefix) {
-  if (!textarea) return;
+function activateMission(item) {
+  if (!item || !item.command) {
+    showToast("Missione non valida.");
+    return;
+  }
 
-  textarea.value = appendLine(textarea.value, `${prefix}: ${command}`);
-  showToast("Missione aggiunta al log. Premi Salva cervello live.");
-}
+  saveActiveCommand(item);
 
-function useAsMission(command) {
-  if (!dailyObjective) return;
-
-  dailyObjective.value = command;
-
+  if (dailyObjective) dailyObjective.value = item.command;
   if (matStatus) matStatus.value = "ONLINE";
   if (matMode) matMode.value = "SCANNING";
 
   const currentEnergy = numberValue(matEnergy, 21);
   if (matEnergy) matEnergy.value = Math.max(5, currentEnergy - 3);
 
-  showToast("Missione impostata. Premi Salva cervello live.");
-}
-
-function generateLogsFromMission(command) {
-  const mission = String(command || "").trim();
-
-  if (!mission) {
-    showToast("Missione vuota.");
-    return;
-  }
-
   if (log09) {
     setTextAreaValue(
       log09,
-      `Segnale community approvato. Mat riceve una nuova missione: "${mission}".`
+      `MISSIONE RICEVUTA: @${item.nickname} ha dato un comando a Mat: "${item.command}". Mat si attiva e inizia la scansione.`
     );
   }
 
-  if (log12) {
-    setTextAreaValue(
-      log12,
-      `SCAN operativo avviato. Mat divide la missione in fonti, segnali e possibili risultati verificabili.`
-    );
-  }
+  if (log12) setTextAreaValue(log12, "");
+  if (log15) setTextAreaValue(log15, "");
+  if (log18) setTextAreaValue(log18, "");
+  if (log20) setTextAreaValue(log20, "");
 
-  if (log15) {
-    setTextAreaValue(
-      log15,
-      `Primo risultato parziale. Mat organizza ciò che ha trovato e separa dati utili, rumore e piste da verificare.`
-    );
-  }
+  if (matSolution) matSolution.value = "";
 
-  if (log18) {
-    setTextAreaValue(
-      log18,
-      `Mat riflette sulla missione: non basta trovare risposte veloci, serve capire cosa è davvero utile alla community.`
-    );
-  }
-
-  if (log20) {
-    setTextAreaValue(
-      log20,
-      `REPORT finale. Missione analizzata: "${mission}". I segnali utili vengono salvati nella memoria di Mat e preparati per il prossimo ciclo.`
-    );
-  }
-
-  showToast("Log automatici generati. Premi Salva cervello live.");
+  showToast("Mat attivato. Ora salva il cervello live.");
 }
 
-async function approveAndSendLive(id, command) {
-  await updateStatus(id, "approved", false);
-
-  useAsMission(command);
-  generateLogsFromMission(command);
-
+async function activateMissionAndSave(item) {
+  await updateStatus(item.id, "approved", false);
+  activateMission(item);
   await saveLiveConfig();
   await loadCommands();
 
-  showToast("Missione approvata, log generati e live aggiornata.");
+  showToast("Missione approvata. Mat è in SCANNING.");
+}
+
+async function publishSolution() {
+  const active = getActiveCommand();
+  const solution = textValue(matSolution);
+
+  if (!active || !active.id || !active.command) {
+    showToast("Nessun comando attivo da archiviare.");
+    return;
+  }
+
+  if (!solution) {
+    showToast("Scrivi prima la soluzione di Mat.");
+    return;
+  }
+
+  if (matStatus) matStatus.value = "ONLINE";
+  if (matMode) matMode.value = "COMPLETED";
+
+  const reportText =
+    `SOLUZIONE COMPLETATA per @${active.nickname}: ${solution}`;
+
+  if (log20) {
+    setTextAreaValue(log20, reportText);
+  }
+
+  const reportPayload = {
+    command_id: Number(active.id),
+    nickname: active.nickname,
+    command: active.command,
+    mat_solution: solution,
+    mat_status: textValue(matStatus, "ONLINE"),
+    mat_mode: "COMPLETED",
+    mat_energy: Math.max(0, Math.min(100, numberValue(matEnergy, 21)))
+  };
+
+  try {
+    const archiveResponse = await fetch(`${SUPABASE_URL}/rest/v1/${REPORTS_TABLE}`, {
+      method: "POST",
+      headers: supabaseHeaders({
+        Prefer: "return=minimal"
+      }),
+      body: JSON.stringify(reportPayload)
+    });
+
+    if (!archiveResponse.ok) throw new Error(await archiveResponse.text());
+
+    await updateStatus(active.id, "completed", false);
+    await saveLiveConfig();
+    await loadCommands();
+
+    showToast("Soluzione pubblicata e report archiviato.");
+  } catch (error) {
+    console.error(error);
+    showToast("Errore archivio report. Controlla mat_reports_archive.");
+  }
 }
 
 if (loginBtn) {
@@ -481,7 +501,7 @@ if (logoutBtn) {
 if (refreshBtn) refreshBtn.addEventListener("click", loadCommands);
 if (missionFilter) missionFilter.addEventListener("change", loadCommands);
 if (saveLiveConfigBtn) saveLiveConfigBtn.addEventListener("click", saveLiveConfig);
-if (saveArchiveBtn) saveArchiveBtn.addEventListener("click", saveArchive);
+if (publishSolutionBtn) publishSolutionBtn.addEventListener("click", publishSolution);
 
 if (moderationList) {
   moderationList.addEventListener("click", async (event) => {
@@ -490,40 +510,25 @@ if (moderationList) {
 
     const action = button.dataset.action;
     const id = button.dataset.id;
+    const nickname = button.dataset.nickname || "utente_anonimo";
     const command = button.dataset.command || "";
 
+    const item = { id, nickname, command };
+
     if (action === "approved" || action === "rejected") {
-      updateStatus(id, action);
+      await updateStatus(id, action);
+      showToast(action === "approved" ? "Missione approvata." : "Missione rifiutata.");
       return;
     }
 
-    if (action === "approve_live") {
-      approveAndSendLive(id, command);
+    if (action === "activate_mission") {
+      await activateMissionAndSave(item);
       return;
     }
 
     if (action === "use_mission") {
-      useAsMission(command);
+      activateMission(item);
       return;
-    }
-
-    if (action === "auto_logs") {
-      generateLogsFromMission(command);
-      return;
-    }
-
-    if (action === "add_log12") {
-      appendToLog(log12, command, "SCAN community");
-      return;
-    }
-
-    if (action === "add_log15") {
-      appendToLog(log15, command, "Risultato da missione community");
-      return;
-    }
-
-    if (action === "add_log18") {
-      appendToLog(log18, command, "Pensiero Mat sulla missione");
     }
   });
 }
