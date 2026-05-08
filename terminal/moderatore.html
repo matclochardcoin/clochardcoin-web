@@ -15,7 +15,7 @@
     <header class="hero">
       <p class="domain">terminal.clochardcoin.it/moderatore</p>
       <h1>CERVELLO DI MAT</h1>
-      <p class="subtitle">Gestisci missione, energia, log, archivio e segnali community.</p>
+      <p class="subtitle">Gestisci missioni, soluzioni, report e memoria di Mat.</p>
     </header>
 
     <section class="terminal-card">
@@ -36,24 +36,44 @@
 
         <label for="matStatus">Status Mat</label>
         <input id="matStatus" type="text" placeholder="ONLINE" />
-<label for="matMode">Modalità Mat</label>
-<select id="matMode">
-  <option value="IDLE">IDLE</option>
-  <option value="SCANNING">SCANNING</option>
-  <option value="ANALYZING">ANALYZING</option>
-  <option value="EXECUTING">EXECUTING</option>
-  <option value="REPORTING">REPORTING</option>
-  <option value="ALERT">ALERT</option>
-</select>
+
+        <label for="matMode">Modalità Mat</label>
+        <select id="matMode">
+          <option value="IDLE">IDLE</option>
+          <option value="SCANNING">SCANNING</option>
+          <option value="ANALYZING">ANALYZING</option>
+          <option value="EXECUTING">EXECUTING</option>
+          <option value="REPORTING">REPORTING</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="ALERT">ALERT</option>
+        </select>
 
         <label for="matEnergy">Energia Mat %</label>
         <input id="matEnergy" type="number" min="0" max="100" placeholder="21" />
 
-        <label for="liveDate">Data live programmata</label>
+        <label for="liveDate">Data live</label>
         <input id="liveDate" type="date" />
 
         <label for="dailyObjective">Missione attiva</label>
-        <input id="dailyObjective" type="text" placeholder="Es. trovare opportunità reali per la community" />
+        <input id="dailyObjective" type="text" placeholder="Missione ricevuta dalla community" />
+
+        <h2>Soluzione / Report di Mat</h2>
+
+        <label for="activeCommandId">ID comando attivo</label>
+        <input id="activeCommandId" type="text" readonly placeholder="Nessun comando attivo" />
+
+        <label for="activeNickname">Utente comando attivo</label>
+        <input id="activeNickname" type="text" readonly placeholder="Nessun utente attivo" />
+
+        <label for="activeCommand">Comando ricevuto</label>
+        <textarea id="activeCommand" rows="3" readonly placeholder="Nessun comando attivo"></textarea>
+
+        <label for="matSolution">Soluzione di Mat</label>
+        <textarea id="matSolution" rows="6" placeholder="Scrivi qui la soluzione/report di Mat. Quando pubblichi, verrà salvata nell’archivio dei report."></textarea>
+
+        <button id="publishSolutionBtn" type="button" class="gold-btn">
+          Pubblica soluzione e archivia report
+        </button>
 
         <h2>Metriche social</h2>
 
@@ -94,7 +114,7 @@
         <label for="liveLink">Live link</label>
         <input id="liveLink" type="url" />
 
-        <h2>Log programmati</h2>
+        <h2>Log live</h2>
 
         <label for="log06">06 BOOT</label>
         <textarea id="log06" rows="3"></textarea>
@@ -116,28 +136,25 @@
 
         <button id="saveLiveConfigBtn" type="button">Salva cervello live</button>
 
-        <button id="saveArchiveBtn" type="button" class="gold-btn">
-          Salva giornata nella memoria
-        </button>
-
         <hr />
 
         <h2>Missioni community</h2>
 
-<label for="missionFilter">Filtro missioni</label>
-<select id="missionFilter">
-  <option value="pending">Pending</option>
-  <option value="approved">Approved</option>
-  <option value="rejected">Rejected</option>
-  <option value="all">Tutte</option>
-</select>
+        <label for="missionFilter">Filtro missioni</label>
+        <select id="missionFilter">
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="completed">Completed</option>
+          <option value="all">Tutte</option>
+        </select>
 
-<div class="actions" style="justify-content:flex-start;margin:14px 0;">
-  <button id="refreshBtn" type="button">Aggiorna missioni</button>
-  <button id="logoutBtn" type="button">Esci</button>
-</div>
+        <div class="actions" style="justify-content:flex-start;margin:14px 0;">
+          <button id="refreshBtn" type="button">Aggiorna missioni</button>
+          <button id="logoutBtn" type="button">Esci</button>
+        </div>
 
-<div id="moderationList" class="commands-list"></div>
+        <div id="moderationList" class="commands-list"></div>
       </div>
     </section>
 
@@ -149,6 +166,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="./moderatore.js?v=26"></script>
+  <script src="./moderatore.js?v=27"></script>
 </body>
 </html>
