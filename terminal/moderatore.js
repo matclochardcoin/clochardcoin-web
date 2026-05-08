@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://krzidujoezrflrsfajxm.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyemlkdWpvZXpyZmxyc2ZhanhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDQzODksImV4cCI6MjA5MzQyMDM4OX0.hLD0OCzpi2fWQA8OlpoCWFk3dqTFLcVJSNVqaW9_ISQ";
+const SUPABASE_KEY = "INSERISCI_LA_TUA_SUPABASE_ANON_KEY";
 
 const COMMANDS_TABLE = "mat_commands";
 const CONFIG_TABLE = "mat_live_config";
@@ -55,6 +55,11 @@ const log20 = $("log20");
 
 const ACTIVE_COMMAND_KEY = "mat-active-command";
 
+const missionLabels = {
+  news: "NOTIZIA",
+  token: "TOKEN"
+};
+
 function supabaseHeaders(extra = {}) {
   return {
     "Content-Type": "application/json",
@@ -82,6 +87,38 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function linkifyText(value) {
+  const escaped = escapeHtml(value || "");
+
+  return escaped.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+}
+
+function getMissionType(item) {
+  const value = String(item?.mission_type || "").toLowerCase();
+
+  if (value === "token") return "token";
+  if (value === "news") return "news";
+
+  const command = String(item?.command || "").toLowerCase();
+
+  if (command.includes("verifica token")) return "token";
+  if (command.includes("token")) return "token";
+  if (command.includes("contract")) return "token";
+  if (command.includes("dexscreener")) return "token";
+  if (command.includes("pump.fun")) return "token";
+  if (command.includes("solscan")) return "token";
+
+  return "news";
+}
+
+function getMissionBadge(item) {
+  const type = getMissionType(item);
+  return missionLabels[type] || "OSINT";
 }
 
 function todayIsoDate() {
@@ -281,7 +318,7 @@ async function loadCommands() {
   try {
     let url =
       `${SUPABASE_URL}/rest/v1/${COMMANDS_TABLE}` +
-      `?select=id,nickname,command,status,created_at`;
+      `?select=id,nickname,command,mission_type,status,created_at`;
 
     if (filter !== "all") {
       url += `&status=eq.${encodeURIComponent(filter)}`;
@@ -304,7 +341,7 @@ async function loadCommands() {
     moderationList.innerHTML = `
       <div class="command-item">
         <strong>Errore lettura Supabase</strong>
-        <p>Controlla tabella mat_commands, policy SELECT e nome colonne.</p>
+        <p>Controlla tabella mat_commands, policy SELECT e colonna mission_type.</p>
       </div>
     `;
   }
@@ -327,17 +364,42 @@ function renderCommands(commands) {
 
   commands.forEach((item) => {
     const div = document.createElement("div");
-    div.className = "command-item";
+    div.className = `command-item mission-${getMissionType(item)}`;
 
     div.innerHTML = `
+      <div class="mission-badge">${escapeHtml(getMissionBadge(item))}</div>
+
       <strong>@${escapeHtml(item.nickname || "utente_anonimo")}</strong>
-      <p>${escapeHtml(item.command)}</p>
+
+      <p>${linkifyText(item.command)}</p>
+
       <small>${escapeHtml(item.created_at)} · stato: ${escapeHtml(item.status)}</small>
 
       <div class="actions" style="justify-content:flex-start;margin:12px 0 0;">
         <button type="button" data-action="approved" data-id="${escapeHtml(item.id)}">Approva</button>
-        <button type="button" data-action="activate_mission" data-id="${escapeHtml(item.id)}" data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}" data-command="${escapeHtml(item.command)}">Attiva Mat</button>
-        <button type="button" data-action="use_mission" data-id="${escapeHtml(item.id)}" data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}" data-command="${escapeHtml(item.command)}">Usa come missione</button>
+
+        <button
+          type="button"
+          data-action="activate_mission"
+          data-id="${escapeHtml(item.id)}"
+          data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}"
+          data-command="${escapeHtml(item.command)}"
+          data-mission-type="${escapeHtml(getMissionType(item))}"
+        >
+          Attiva Mat
+        </button>
+
+        <button
+          type="button"
+          data-action="use_mission"
+          data-id="${escapeHtml(item.id)}"
+          data-nickname="${escapeHtml(item.nickname || "utente_anonimo")}"
+          data-command="${escapeHtml(item.command)}"
+          data-mission-type="${escapeHtml(getMissionType(item))}"
+        >
+          Usa come missione
+        </button>
+
         <button type="button" data-action="rejected" data-id="${escapeHtml(item.id)}">Rifiuta</button>
       </div>
     `;
@@ -372,7 +434,15 @@ function activateMission(item) {
     return;
   }
 
-  saveActiveCommand(item);
+  const missionType = getMissionType(item);
+  const missionBadge = getMissionBadge(item);
+
+  saveActiveCommand({
+    id: item.id,
+    nickname: item.nickname,
+    command: item.command,
+    mission_type: missionType
+  });
 
   if (dailyObjective) dailyObjective.value = item.command;
   if (matStatus) matStatus.value = "ONLINE";
@@ -388,32 +458,24 @@ function activateMission(item) {
   if (log09) {
     setTextAreaValue(
       log09,
-      `MISSIONE RICEVUTA: @${item.nickname} ha dato un comando a Mat: "${item.command}". Mat si attiva.`
+      `COMANDO OSINT RICEVUTO [${missionBadge}] da @${item.nickname}: "${item.command}". Mat si attiva.`
     );
   }
 
   if (log12) {
     setTextAreaValue(
       log12,
-      "SCANSIONE ATTIVA: Mat raccoglie segnali, filtra rumore e prepara la risposta."
+      `SCANSIONE ATTIVA [${missionBadge}]: Mat raccoglie fonti pubbliche, segnali, contesto e possibili anomalie.`
     );
   }
 
-  if (log15) {
-    setTextAreaValue(log15, "");
-  }
-
-  if (log18) {
-    setTextAreaValue(log18, "");
-  }
-
-  if (log20) {
-    setTextAreaValue(log20, "");
-  }
+  if (log15) setTextAreaValue(log15, "");
+  if (log18) setTextAreaValue(log18, "");
+  if (log20) setTextAreaValue(log20, "");
 
   if (matSolution) matSolution.value = "";
 
-  showToast("Mat attivato. Ora salva il cervello live.");
+  showToast(`Mat attivato su ${missionBadge}. Ora salva il cervello live.`);
 }
 
 async function activateMissionAndSave(item) {
@@ -439,10 +501,13 @@ async function publishSolution() {
     return;
   }
 
+  const missionType = getMissionType(active);
+  const missionBadge = getMissionBadge(active);
+
   if (matStatus) matStatus.value = "ONLINE";
   if (matMode) matMode.value = "COMPLETED";
 
-  const reportText = `SOLUZIONE COMPLETATA per @${active.nickname}: ${solution}`;
+  const reportText = `REPORT ${missionBadge} COMPLETATO per @${active.nickname}: ${solution}`;
 
   if (log20) {
     setTextAreaValue(log20, reportText);
@@ -518,8 +583,9 @@ if (moderationList) {
     const id = button.dataset.id;
     const nickname = button.dataset.nickname || "utente_anonimo";
     const command = button.dataset.command || "";
+    const mission_type = button.dataset.missionType || "news";
 
-    const item = { id, nickname, command };
+    const item = { id, nickname, command, mission_type };
 
     if (action === "approved" || action === "rejected") {
       await updateStatus(id, action);
