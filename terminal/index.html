@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>DAI UNA MISSIONE A MAT</title>
-  <meta name="description" content="Terminale pubblico di Mat Clochard. Invia una missione al primo clochard digitale di ClochardCoin." />
+  <title>CHIEDI A MAT</title>
+  <meta name="description" content="Terminale pubblico di Mat Clochard. Chiedi al primo clochard digitale di verificare una notizia o un token con metodo OSINT." />
 
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -18,15 +18,15 @@
     <header class="hero">
       <p class="domain">www.clochardcoin.it/terminal</p>
 
-      <h1>DAI UNA MISSIONE A MAT</h1>
+      <h1>CHIEDI A MAT</h1>
 
       <p class="subtitle">
-        La community può guidare il primo clochard digitale del Web3.
+        Il primo clochard digitale che verifica notizie e token.
       </p>
 
       <p class="intro">
-        Scrivi una missione utile, concreta e verificabile. Mat potrà trasformarla
-        in log, scansione, contenuto o memoria pubblica nella live.
+        Tu gli dai un dubbio. Mat entra nella strada del web, cerca tracce OSINT
+        e prova a trasformare il comando in un report utile per tutti.
       </p>
     </header>
 
@@ -34,19 +34,19 @@
       <div class="mission-status-card">
         <span>STATUS</span>
         <strong>ONLINE</strong>
-        <small>ricezione missioni attiva</small>
+        <small>ricezione comandi attiva</small>
       </div>
 
       <div class="mission-status-card">
         <span>CODA</span>
         <strong id="pendingCount">...</strong>
-        <small>missioni in moderazione</small>
+        <small>richieste in moderazione</small>
       </div>
 
       <div class="mission-status-card">
-        <span>LIVE</span>
-        <strong>H24</strong>
-        <small>nodo Mat attivo</small>
+        <span>FOCUS</span>
+        <strong>OSINT</strong>
+        <small>notizie e token</small>
       </div>
     </section>
 
@@ -56,7 +56,7 @@
           <span></span><span></span><span></span>
         </div>
 
-        <p>/mat_clochard/mission_input</p>
+        <p>/mat_clochard/osint_input</p>
       </div>
 
       <form id="commandForm" class="command-form">
@@ -70,27 +70,35 @@
           placeholder="es. NODE_001"
         />
 
-        <label for="command">Missione per Mat</label>
+        <label for="missionType">Tipo di verifica</label>
+
+        <select id="missionType" name="missionType" required>
+          <option value="news">Verifica notizia</option>
+          <option value="token">Verifica token</option>
+        </select>
+
+        <label for="command">Comando per Mat</label>
 
         <textarea
           id="command"
           name="command"
-          maxlength="240"
-          placeholder="Esempio: Mat, trova 5 strumenti gratuiti utili a chi vuole iniziare online senza budget."
+          maxlength="500"
+          placeholder="Esempio notizia: Mat, verifica questa notizia e dimmi se è affidabile: [link o testo].&#10;&#10;Esempio token: Mat, verifica questo token e cerca segnali di rischio: [contract address o link]."
           required
         ></textarea>
 
         <div class="counter">
-          <span id="charCount">0</span>/240 caratteri
+          <span id="charCount">0</span>/500 caratteri
         </div>
 
         <div class="rules-box">
-          <h2>Missioni consigliate</h2>
+          <h2>Cosa può verificare Mat</h2>
 
           <ul>
-            <li>Cerca opportunità reali utili alla community.</li>
-            <li>Chiedi scansioni su AI, Web3, lavoro, casa, strumenti o crescita organica.</li>
-            <li>Scrivi in modo semplice: una missione, un obiettivo, un risultato atteso.</li>
+            <li><b>Notizie:</b> link, testo, screenshot descritto, dichiarazioni o eventi da controllare.</li>
+            <li><b>Token:</b> nome, contract address, link Dexscreener, Pump.fun o sito ufficiale.</li>
+            <li>Mat cerca tracce pubbliche, fonti, segnali di rischio e contesto.</li>
+            <li>Ogni report completato aumenta la memoria pubblica di Mat.</li>
             <li>Evita dati personali, contenuti offensivi, illegali o pericolosi.</li>
           </ul>
         </div>
@@ -98,20 +106,20 @@
         <label class="checkbox-row">
           <input id="rulesAccepted" type="checkbox" required />
           <span>
-            Accetto le regole della community. Confermo che la missione non contiene
+            Accetto le regole della community. Confermo che il comando non contiene
             dati personali, contenuti offensivi, illegali o pericolosi.
           </span>
         </label>
 
         <button type="submit" id="submitBtn">
-          Invia missione
+          Invia comando a Mat
         </button>
       </form>
 
       <div id="successBox" class="success-box hidden">
-        <strong>Missione ricevuta.</strong>
+        <strong>Comando ricevuto.</strong>
         <p>
-          Ora entra in moderazione. Se approvata, potrà apparire nella live di Mat.
+          Ora entra in moderazione. Se approvato, Mat potrà trasformarlo in un report OSINT pubblico.
         </p>
       </div>
     </section>
@@ -119,25 +127,25 @@
     <section class="info-grid">
       <div class="info-card">
         <span>01</span>
-        <strong>Invia</strong>
-        <p>Scrivi una missione utile, chiara e coerente con il percorso di Mat.</p>
+        <strong>Invia un dubbio</strong>
+        <p>Scegli se vuoi verificare una notizia o un token.</p>
       </div>
 
       <div class="info-card">
         <span>02</span>
-        <strong>Moderazione</strong>
-        <p>La missione viene controllata prima di entrare nel nodo live.</p>
+        <strong>Mat scansiona</strong>
+        <p>Il comando viene moderato e poi trasformato in ricerca OSINT.</p>
       </div>
 
       <div class="info-card">
         <span>03</span>
-        <strong>Memoria</strong>
-        <p>Le missioni migliori possono diventare log, report o archivio pubblico.</p>
+        <strong>Memoria pubblica</strong>
+        <p>Il report completato resta nell’archivio e diventa utile per tutti.</p>
       </div>
     </section>
 
     <section class="last-commands">
-      <h2>Missioni inviate da questo dispositivo</h2>
+      <h2>Comandi inviati da questo dispositivo</h2>
 
       <div id="commandsList" class="commands-list"></div>
 
@@ -146,8 +154,8 @@
       </button>
 
       <p class="local-note">
-        Le missioni vengono inviate a Supabase e restano in attesa di moderazione.
-        Questa lista mostra solo quelle inviate da questo dispositivo.
+        I comandi vengono inviati a Supabase e restano in attesa di moderazione.
+        Questa lista mostra solo quelli inviati da questo dispositivo.
       </p>
     </section>
 
@@ -160,14 +168,14 @@
 
     <footer class="footer">
       <p>
-        Mat Clochard è una presenza digitale narrativa. Le missioni inviate dagli utenti
-        sono segnali community e possono essere selezionate, modificate o escluse.
+        Mat Clochard è una presenza digitale narrativa. I report sono generati da comandi community,
+        moderati prima della pubblicazione e basati su informazioni pubbliche verificabili.
       </p>
     </footer>
   </main>
 
   <div id="toast" class="toast"></div>
 
-  <script src="./script.js?v=2"></script>
+  <script src="./script.js?v=3"></script>
 </body>
 </html>
