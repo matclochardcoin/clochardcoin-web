@@ -1094,3 +1094,204 @@ summary {
     font-size: 18px;
   }
 }
+/* LIVE TERMINAL V2 - LOGICA VISIVA MISSIONI */
+
+.terminal {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.72)),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.018) 0,
+      rgba(255, 255, 255, 0.018) 1px,
+      transparent 1px,
+      transparent 5px
+    ),
+    #030303;
+  border-top: 1px solid rgba(255, 208, 0, 0.12);
+}
+
+.terminal-line {
+  position: relative;
+  margin: 0 0 10px;
+  padding: 10px 12px 10px 14px;
+  border-left: 3px solid rgba(56, 255, 139, 0.32);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--green);
+  font-size: clamp(12px, 2vw, 16px);
+  line-height: 1.5;
+}
+
+.terminal-line::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(56, 255, 139, 0.7);
+  box-shadow: 0 0 10px rgba(56, 255, 139, 0.35);
+}
+
+.terminal-line .time {
+  color: var(--muted);
+}
+
+.terminal-line .category {
+  display: inline-flex;
+  margin: 0 6px 4px 0;
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 208, 0, 0.22);
+  border-radius: 999px;
+  color: var(--yellow);
+  background: rgba(255, 208, 0, 0.055);
+  font-size: 0.86em;
+}
+
+/* CATEGORIE LOG */
+
+.terminal-line.cat-BOOT,
+.terminal-line.cat-SYSTEM,
+.terminal-line.cat-STATUS {
+  border-left-color: rgba(255, 208, 0, 0.4);
+}
+
+.terminal-line.cat-BOOT::before,
+.terminal-line.cat-SYSTEM::before,
+.terminal-line.cat-STATUS::before {
+  background: var(--yellow);
+  box-shadow: 0 0 12px rgba(255, 208, 0, 0.35);
+}
+
+.terminal-line.cat-MISSION {
+  border-left-color: rgba(255, 208, 0, 0.78);
+  background:
+    linear-gradient(90deg, rgba(255, 208, 0, 0.08), rgba(255, 208, 0, 0.025)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.terminal-line.cat-MISSION::before {
+  background: var(--yellow);
+  box-shadow: 0 0 16px rgba(255, 208, 0, 0.48);
+}
+
+.terminal-line.cat-SCAN {
+  border-left-color: rgba(56, 255, 139, 0.5);
+}
+
+.terminal-line.cat-SCAN .category {
+  color: var(--green);
+  border-color: rgba(56, 255, 139, 0.22);
+  background: rgba(56, 255, 139, 0.05);
+}
+
+.terminal-line.cat-USER_SIGNAL {
+  border-left-color: rgba(255, 42, 42, 0.58);
+  background:
+    linear-gradient(90deg, rgba(255, 42, 42, 0.08), rgba(255, 42, 42, 0.02)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.terminal-line.cat-USER_SIGNAL::before {
+  background: var(--red);
+  box-shadow: 0 0 14px rgba(255, 42, 42, 0.42);
+}
+
+.terminal-line.cat-USER_SIGNAL .category {
+  color: var(--red);
+  border-color: rgba(255, 42, 42, 0.28);
+  background: rgba(255, 42, 42, 0.06);
+}
+
+.terminal-line.cat-RESULT {
+  border-left-color: rgba(255, 208, 0, 0.6);
+}
+
+.terminal-line.cat-RESULT .category {
+  color: var(--yellow-strong);
+}
+
+.terminal-line.cat-MAT {
+  color: var(--white);
+  border-left-color: rgba(255, 255, 255, 0.25);
+  font-style: italic;
+}
+
+.terminal-line.cat-REPORT,
+.terminal-line.cat-ERROR,
+.terminal-line.alert {
+  border-left-color: rgba(255, 42, 42, 0.72);
+  background:
+    linear-gradient(90deg, rgba(255, 42, 42, 0.1), rgba(255, 42, 42, 0.025)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.terminal-line.cat-REPORT::before,
+.terminal-line.cat-ERROR::before,
+.terminal-line.alert::before {
+  background: var(--red);
+  box-shadow: 0 0 14px rgba(255, 42, 42, 0.45);
+}
+
+.terminal-line.cat-IDLE {
+  color: var(--muted);
+  border-left-color: rgba(255, 255, 255, 0.16);
+}
+
+.terminal-line.cat-IDLE::before {
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: none;
+}
+
+/* EVIDENZA MISSIONE ATTIVA */
+
+.mission-box {
+  animation: missionBreath 5.5s ease-in-out infinite;
+}
+
+@keyframes missionBreath {
+  0%, 100% {
+    box-shadow:
+      0 0 28px rgba(255, 208, 0, 0.12),
+      inset 0 0 22px rgba(255, 42, 42, 0.06);
+  }
+
+  50% {
+    box-shadow:
+      0 0 44px rgba(255, 208, 0, 0.22),
+      inset 0 0 30px rgba(255, 42, 42, 0.1);
+  }
+}
+
+.control-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.control-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent, rgba(255, 208, 0, 0.06), transparent);
+  transform: translateX(-120%);
+  animation: cardScan 8s linear infinite;
+}
+
+@keyframes cardScan {
+  0% { transform: translateX(-120%); }
+  45% { transform: translateX(120%); }
+  100% { transform: translateX(120%); }
+}
+
+@media (max-width: 520px) {
+  .terminal-line {
+    padding: 9px 10px 9px 12px;
+    font-size: 12px;
+  }
+
+  .terminal-line .category {
+    display: inline-flex;
+    margin-top: 4px;
+  }
+}
