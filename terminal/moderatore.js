@@ -83,7 +83,7 @@ function todayIsoDate() {
 }
 
 function getSelectedLiveDate() {
-  return liveDate.value || todayIsoDate();
+  return liveDate?.value || todayIsoDate();
 }
 
 function numberValue(input, fallback = 0) {
@@ -107,15 +107,23 @@ function getScheduledLogsPayload() {
 }
 
 function showLogin() {
-  loginBox.classList.remove("hidden");
-  moderationBox.classList.add("hidden");
+  if (loginBox) loginBox.classList.remove("hidden");
+  if (moderationBox) moderationBox.classList.add("hidden");
 }
 
 function showModerator() {
-  loginBox.classList.add("hidden");
-  moderationBox.classList.remove("hidden");
+  if (loginBox) loginBox.classList.add("hidden");
+  if (moderationBox) moderationBox.classList.remove("hidden");
+
   loadLiveConfig();
   loadCommands();
+}
+
+function getLogText(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") return value.text || "";
+  return "";
 }
 
 async function loadLiveConfig() {
@@ -127,7 +135,8 @@ async function loadLiveConfig() {
       `&limit=1`;
 
     const response = await fetch(url, {
-      headers: supabaseHeaders()
+      headers: supabaseHeaders(),
+      cache: "no-store"
     });
 
     if (!response.ok) throw new Error(await response.text());
@@ -136,51 +145,45 @@ async function loadLiveConfig() {
     const config = data[0];
 
     if (!config) {
-      liveDate.value = todayIsoDate();
-      matStatus.value = "ONLINE";
-      matEnergy.value = 21;
+      if (liveDate) liveDate.value = todayIsoDate();
+      if (matStatus) matStatus.value = "ONLINE";
+      if (matEnergy) matEnergy.value = 21;
+
       showToast("Config non trovata. Verrà creata al primo salvataggio.");
       return;
     }
 
-    matStatus.value = config.mat_status || "ONLINE";
-    matEnergy.value = config.mat_energy ?? 21;
-    liveDate.value = config.live_date || todayIsoDate();
-    dailyObjective.value = config.daily_objective || "";
+    if (matStatus) matStatus.value = config.mat_status || "ONLINE";
+    if (matEnergy) matEnergy.value = config.mat_energy ?? 21;
+    if (liveDate) liveDate.value = config.live_date || todayIsoDate();
+    if (dailyObjective) dailyObjective.value = config.daily_objective || "";
 
-    instagramFollowers.value = config.instagram_followers ?? "";
-    telegramFollowers.value = config.telegram_followers ?? "";
-    tiktokFollowers.value = config.tiktok_followers ?? "";
-    youtubeStatus.value = config.youtube_status || "A BREVE";
+    if (instagramFollowers) instagramFollowers.value = config.instagram_followers ?? "";
+    if (telegramFollowers) telegramFollowers.value = config.telegram_followers ?? "";
+    if (tiktokFollowers) tiktokFollowers.value = config.tiktok_followers ?? "";
+    if (youtubeStatus) youtubeStatus.value = config.youtube_status || "A BREVE";
 
-    solanaWallet.value = config.solana_wallet || "5sc1W9g5VVyBW9EhU5oYhhDF49K751mKjZWo92iemTji";
-    minimumDonation.value = config.minimum_donation || "0.01 SOL";
+    if (solanaWallet) solanaWallet.value = config.solana_wallet || "5sc1W9g5VVyBW9EhU5oYhhDF49K751mKjZWo92iemTji";
+    if (minimumDonation) minimumDonation.value = config.minimum_donation || "0.01 SOL";
 
-    instagramLink.value = config.instagram_link || "https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr";
-    telegramLink.value = config.telegram_link || "https://t.me/+2WX7IXU1CzBlNzc0";
-    tiktokLink.value = config.tiktok_link || "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT";
-    terminalLink.value = config.terminal_link || "https://terminal.clochardcoin.it";
-    liveLink.value = config.live_link || "https://live.clochardcoin.it";
+    if (instagramLink) instagramLink.value = config.instagram_link || "https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr";
+    if (telegramLink) telegramLink.value = config.telegram_link || "https://t.me/+2WX7IXU1CzBlNzc0";
+    if (tiktokLink) tiktokLink.value = config.tiktok_link || "https://www.tiktok.com/@matt.clochard?_r=1&_t=ZN-9679EEU85TT";
+    if (terminalLink) terminalLink.value = config.terminal_link || "https://terminal.clochardcoin.it";
+    if (liveLink) liveLink.value = config.live_link || "https://live.clochardcoin.it";
 
     const logs = config.scheduled_logs || {};
 
-    log06.value = getLogText(logs["06"]);
-    log09.value = getLogText(logs["09"]);
-    log12.value = getLogText(logs["12"]);
-    log15.value = getLogText(logs["15"]);
-    log18.value = getLogText(logs["18"]);
-    log20.value = getLogText(logs["20"]);
+    if (log06) log06.value = getLogText(logs["06"]);
+    if (log09) log09.value = getLogText(logs["09"]);
+    if (log12) log12.value = getLogText(logs["12"]);
+    if (log15) log15.value = getLogText(logs["15"]);
+    if (log18) log18.value = getLogText(logs["18"]);
+    if (log20) log20.value = getLogText(logs["20"]);
   } catch (error) {
     console.error(error);
     showToast("Errore caricamento cervello live.");
   }
-}
-
-function getLogText(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "object") return value.text || "";
-  return "";
 }
 
 async function saveLiveConfig() {
@@ -261,6 +264,8 @@ async function saveArchive() {
 }
 
 async function loadCommands() {
+  if (!moderationList) return;
+
   moderationList.innerHTML = `
     <div class="command-item">
       <strong>Caricamento...</strong>
@@ -277,7 +282,8 @@ async function loadCommands() {
       `&limit=50`;
 
     const response = await fetch(url, {
-      headers: supabaseHeaders()
+      headers: supabaseHeaders(),
+      cache: "no-store"
     });
 
     if (!response.ok) throw new Error(await response.text());
@@ -297,6 +303,8 @@ async function loadCommands() {
 }
 
 function renderCommands(commands) {
+  if (!moderationList) return;
+
   moderationList.innerHTML = "";
 
   if (!commands.length) {
@@ -351,34 +359,48 @@ async function updateStatus(id, status) {
   }
 }
 
-loginBtn.addEventListener("click", () => {
-  const password = adminPassword.value.trim();
+if (loginBtn) {
+  loginBtn.addEventListener("click", () => {
+    const password = adminPassword?.value.trim();
 
-  if (password !== ADMIN_PASSWORD) {
-    showToast("Password errata.");
-    return;
-  }
+    if (password !== ADMIN_PASSWORD) {
+      showToast("Password errata.");
+      return;
+    }
 
-  localStorage.setItem("mat-moderator-auth", "true");
-  showToast("Accesso riuscito.");
-  showModerator();
-});
+    localStorage.setItem("mat-moderator-auth", "true");
+    showToast("Accesso riuscito.");
+    showModerator();
+  });
+}
 
-logoutBtn.addEventListener("click", () => {
-  localStorage.removeItem("mat-moderator-auth");
-  showLogin();
-});
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("mat-moderator-auth");
+    showLogin();
+  });
+}
 
-refreshBtn.addEventListener("click", loadCommands);
-saveLiveConfigBtn.addEventListener("click", saveLiveConfig);
-saveArchiveBtn.addEventListener("click", saveArchive);
+if (refreshBtn) {
+  refreshBtn.addEventListener("click", loadCommands);
+}
 
-moderationList.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action]");
-  if (!button) return;
+if (saveLiveConfigBtn) {
+  saveLiveConfigBtn.addEventListener("click", saveLiveConfig);
+}
 
-  updateStatus(button.dataset.id, button.dataset.action);
-});
+if (saveArchiveBtn) {
+  saveArchiveBtn.addEventListener("click", saveArchive);
+}
+
+if (moderationList) {
+  moderationList.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+
+    updateStatus(button.dataset.id, button.dataset.action);
+  });
+}
 
 if (localStorage.getItem("mat-moderator-auth") === "true") {
   showModerator();
