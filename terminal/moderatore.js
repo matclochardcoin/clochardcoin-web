@@ -211,6 +211,7 @@ async function loadLiveConfig() {
     if (liveLink) liveLink.value = config.live_link || "https://www.clochardcoin.it/live/";
 
     const logs = config.scheduled_logs || {};
+
     if (log06) log06.value = getLogText(logs["06"]);
     if (log09) log09.value = getLogText(logs["09"]);
     if (log12) log12.value = getLogText(logs["12"]);
@@ -224,11 +225,9 @@ async function loadLiveConfig() {
 }
 
 async function saveLiveConfig() {
-  const selectedDate = getSelectedLiveDate();
-
   const payload = {
     id: CONFIG_ID,
-    live_date: selectedDate,
+    live_date: getSelectedLiveDate(),
     daily_objective: textValue(dailyObjective, "In attesa del prossimo comando"),
     mat_status: textValue(matStatus, "ONLINE"),
     mat_mode: textValue(matMode, "IDLE"),
@@ -389,17 +388,28 @@ function activateMission(item) {
   if (log09) {
     setTextAreaValue(
       log09,
-      `MISSIONE RICEVUTA: @${item.nickname} ha dato un comando a Mat: "${item.command}". Mat si attiva e inizia la scansione.`
+      `MISSIONE RICEVUTA: @${item.nickname} ha dato un comando a Mat: "${item.command}". Mat si attiva.`
     );
   }
 
   if (log12) {
-    setTextAreaValue(log12, "SCANSIONE ATTIVA: Mat raccoglie segnali e prepara la risposta.");
+    setTextAreaValue(
+      log12,
+      "SCANSIONE ATTIVA: Mat raccoglie segnali, filtra rumore e prepara la risposta."
+    );
   }
 
-  if (log15) setTextAreaValue(log15, "");
-  if (log18) setTextAreaValue(log18, "");
-  if (log20) setTextAreaValue(log20, "");
+  if (log15) {
+    setTextAreaValue(log15, "");
+  }
+
+  if (log18) {
+    setTextAreaValue(log18, "");
+  }
+
+  if (log20) {
+    setTextAreaValue(log20, "");
+  }
 
   if (matSolution) matSolution.value = "";
 
