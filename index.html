@@ -4,11 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>ClochardCoin | Mat Clochard OSINT Live</title>
-  <meta name="description" content="Mat Clochard verifica notizie, analizza token e trasforma i comandi della community in report OSINT pubblici." />
+  <title>Clochard Lab | Il laboratorio sta nascendo</title>
+  <meta name="description" content="Clochard Lab è il laboratorio di ClochardCoin. Dal caos digitale delle persone nascono entità che imparano ad aiutarle." />
 
   <style>
     * { box-sizing: border-box; }
+
+    :root {
+      --black: #050505;
+      --panel: rgba(8, 8, 8, 0.94);
+      --yellow: #ffcc33;
+      --red: #e32222;
+      --green: #38ff8b;
+      --white: #f5f5f5;
+      --muted: #a7a7a7;
+    }
 
     body {
       margin: 0;
@@ -17,8 +27,8 @@
       background:
         radial-gradient(circle at top, rgba(255, 204, 51, 0.16), transparent 34%),
         radial-gradient(circle at bottom, rgba(227, 34, 34, 0.26), transparent 42%),
-        #050505;
-      color: #f5f5f5;
+        var(--black);
+      color: var(--white);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -29,11 +39,11 @@
 
     .card {
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
       border: 1px solid rgba(255, 204, 51, 0.38);
-      background: rgba(8, 8, 8, 0.92);
+      background: var(--panel);
       border-radius: 26px;
-      padding: 26px 20px;
+      padding: 28px 20px;
       box-shadow: 0 0 45px rgba(227, 34, 34, 0.18);
     }
 
@@ -47,11 +57,12 @@
     }
 
     .tag {
-      color: #ffcc33;
+      color: var(--yellow);
       letter-spacing: 2px;
       font-size: 11px;
       font-weight: 800;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
     }
 
     h1 {
@@ -59,52 +70,28 @@
       font-size: 34px;
       line-height: 1.05;
       color: #fff;
+      text-transform: uppercase;
     }
 
-    h1 span { color: #e32222; }
+    h1 span { color: var(--red); }
 
     .subtitle {
-      margin: 14px 0 18px;
+      margin: 16px 0 18px;
       color: #d2d2d2;
-      line-height: 1.45;
+      line-height: 1.5;
       font-size: 15px;
     }
 
     .claim {
-      border: 1px solid rgba(56, 255, 139, 0.2);
+      border: 1px solid rgba(255, 204, 51, 0.28);
       border-radius: 18px;
-      background: rgba(56, 255, 139, 0.055);
-      color: #38ff8b;
+      background: rgba(255, 204, 51, 0.055);
+      color: var(--yellow);
       padding: 14px;
       margin: 0 0 18px;
       font-family: monospace;
-      font-size: 14px;
-      line-height: 1.45;
-    }
-
-    .ticker {
-      width: 100%;
-      overflow: hidden;
-      border: 1px solid rgba(255, 204, 51, 0.35);
-      background: #090909;
-      border-radius: 14px;
-      margin: 0 0 18px;
-      padding: 10px 0;
-      white-space: nowrap;
-    }
-
-    .ticker-track {
-      display: inline-block;
-      padding-left: 100%;
-      animation: ticker 24s linear infinite;
-      font-family: monospace;
       font-size: 13px;
-      color: #ffcc33;
-    }
-
-    @keyframes ticker {
-      from { transform: translateX(0); }
-      to { transform: translateX(-100%); }
+      line-height: 1.45;
     }
 
     .terminal-line {
@@ -113,51 +100,101 @@
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
       padding: 14px;
-      margin-bottom: 20px;
+      margin: 0 0 20px;
       color: #d8d8d8;
       font-family: monospace;
       font-size: 13px;
       line-height: 1.55;
     }
 
-    .terminal-line strong { color: #ffcc33; }
+    .terminal-line strong { color: var(--yellow); }
 
-    .btn {
+    form {
+      margin-top: 16px;
+    }
+
+    input[type="email"] {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: #080808;
+      color: #fff;
+      outline: none;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    input[type="email"]:focus {
+      border-color: var(--yellow);
+      box-shadow: 0 0 18px rgba(255, 204, 51, 0.13);
+    }
+
+    .privacy {
+      display: flex;
+      gap: 10px;
+      text-align: left;
+      align-items: flex-start;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 8px 0 14px;
+    }
+
+    .privacy input {
+      margin-top: 2px;
+      accent-color: var(--yellow);
+    }
+
+    button {
       display: block;
       width: 100%;
       padding: 16px;
-      margin: 12px 0;
       border-radius: 16px;
-      text-decoration: none;
       font-weight: 900;
       color: #050505;
-      background: #ffcc33;
-      border: 1px solid #ffcc33;
+      background: var(--yellow);
+      border: 1px solid var(--yellow);
       letter-spacing: 0.4px;
+      cursor: pointer;
+      font-size: 14px;
     }
 
-    .btn.news {
-      color: #050505;
-      background: #38ff8b;
-      border-color: #38ff8b;
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
-    .btn.token {
-      color: #fff;
-      background: rgba(227,34,34,0.18);
-      border-color: rgba(227,34,34,0.65);
+    .message {
+      min-height: 22px;
+      margin-top: 12px;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.4;
     }
 
-    .btn.secondary {
-      color: #fff;
-      background: transparent;
-      border-color: rgba(255,255,255,0.28);
+    .message.success { color: var(--green); }
+    .message.error { color: var(--red); }
+
+    .social {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      font-family: monospace;
     }
 
-    .btn.danger {
-      color: #ffcc33;
-      background: rgba(227,34,34,0.12);
-      border-color: rgba(227,34,34,0.55);
+    .social a {
+      color: var(--yellow);
+      text-decoration: none;
+      opacity: 0.9;
+    }
+
+    .social a:hover {
+      opacity: 1;
+      text-decoration: underline;
     }
 
     .footer {
@@ -173,40 +210,123 @@
   <main class="card">
     <img class="logo" src="./assets/logo.png" alt="ClochardCoin logo" />
 
-    <div class="tag">CLOCHARDCOIN // OSINT LIVE SYSTEM</div>
+    <div class="tag">CLOCHARD LAB // BY CLOCHARDCOIN</div>
 
-    <h1>MAT <span>CLOCHARD</span></h1>
+    <h1>IL LABORATORIO <span>STA NASCENDO</span></h1>
 
     <p class="subtitle">
-      Il primo clochard digitale del Web3. Verifica notizie, analizza token
-      e trasforma i comandi della community in report pubblici.
+      Clochard Lab è il laboratorio di ClochardCoin.
+      Un luogo dove dal caos digitale delle persone nascono entità che imparano ad aiutarle.
     </p>
 
     <div class="claim">
-      Ogni missione completata aumenta la memoria pubblica di Mat.
-    </div>
-
-    <div class="ticker">
-      <div class="ticker-track">
-        [OSINT] Verifica notizie · Analisi token · Report pubblici · Fonti aperte · Community signals · Memoria di Mat in crescita ·
-      </div>
+      Accesso iniziale riservato a tester selezionati.
     </div>
 
     <div class="terminal-line">
-      <strong>[NEWS]</strong> Invia una notizia da verificare.<br>
-      <strong>[TOKEN]</strong> Invia un token da analizzare.<br>
-      <strong>[MEMORY]</strong> I report completati restano pubblici.
+      <strong>[STATUS]</strong> Clochard Lab online<br>
+      <strong>[ACCESS]</strong> Tester privati in selezione<br>
+      <strong>[SYSTEM]</strong> Entità digitali in sviluppo<br>
+      <strong>[SIGNAL]</strong> Newsletter attiva
     </div>
 
-    <a class="btn news" href="./terminal/">VERIFICA UNA NOTIZIA</a>
-    <a class="btn token" href="./terminal/">VERIFICA UN TOKEN</a>
-    <a class="btn" href="./live/">ENTRA NELLA LIVE</a>
-    <a class="btn secondary" href="./terminal/">DAI UN COMANDO A MAT</a>
-    <a class="btn danger" href="./terminal/moderatore.html">AREA MODERATORE</a>
+    <form id="newsletterForm">
+      <input
+        id="email"
+        type="email"
+        placeholder="Inserisci la tua email"
+        required
+        autocomplete="email"
+      />
+
+      <label class="privacy">
+        <input id="privacy" type="checkbox" required />
+        <span>
+          Accetto di lasciare la mia email per ricevere aggiornamenti, inviti privati e comunicazioni su Clochard Lab.
+        </span>
+      </label>
+
+      <button id="submitBtn" type="submit">ENTRA NELLA LISTA</button>
+
+      <div id="message" class="message"></div>
+    </form>
+
+    <div class="social">
+      <a href="https://www.instagram.com/clochard_coin?igsh=ZGxnbGV1aWs3OGpr" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://x.com/clochard_coin?t=2fP9AQMvLICwEX4iauEcXA&s=09" target="_blank" rel="noopener">X</a>
+      <a href="https://t.me/+2WX7IXU1CzBlNzc0" target="_blank" rel="noopener">Telegram</a>
+    </div>
 
     <div class="footer">
-      ClochardCoin · moneta di identità · powered by public reports
+      ClochardCoin · moneta di identità<br>
+      Nessun accesso privato richiesto. Solo segnali pubblici e dati condivisi volontariamente.
     </div>
   </main>
+
+  <script>
+    const SUPABASE_URL = "https://ojkhiortqkskiajhfcdg.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qa2hpb3J0cWtza2lhamhmY2RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNDIyNzIsImV4cCI6MjA5MzkxODI3Mn0.HZEQkGTbQ9-EyRaipB8kcxlXCgbz19XApIIZJuwJEbg";
+
+    const form = document.getElementById("newsletterForm");
+    const emailInput = document.getElementById("email");
+    const privacyInput = document.getElementById("privacy");
+    const submitBtn = document.getElementById("submitBtn");
+    const message = document.getElementById("message");
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = "message " + type;
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const email = emailInput.value.trim().toLowerCase();
+
+      if (!email || !privacyInput.checked) {
+        showMessage("[ERROR] Inserisci email e accetta la privacy.", "error");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "INVIO IN CORSO...";
+      showMessage("[SYSTEM] Registrazione segnale...", "");
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/newsletter_signups`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Prefer": "return=minimal"
+          },
+          body: JSON.stringify({
+            email: email,
+            source: "clochardcoin_landing",
+            status: "active"
+          })
+        });
+
+        if (response.status === 201) {
+          showMessage("[OK] Sei entrato nella lista del laboratorio.", "success");
+          form.reset();
+          return;
+        }
+
+        if (response.status === 409) {
+          showMessage("[INFO] Questa email è già nella lista.", "success");
+          return;
+        }
+
+        showMessage("[ERROR] Registrazione non riuscita. Riprova.", "error");
+      } catch (error) {
+        showMessage("[ERROR] Connessione al laboratorio non riuscita.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "ENTRA NELLA LISTA";
+      }
+    });
+  </script>
 </body>
 </html>
